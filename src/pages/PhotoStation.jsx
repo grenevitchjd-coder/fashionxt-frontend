@@ -150,7 +150,10 @@ function PhotoRow({ person, onCapture, uploadingKey }) {
     return matches.length ? matches[matches.length - 1] : null;
   }
   function countForPrefix(prefix) {
-    return person.photos.filter((p) => p.tag && p.tag.startsWith(prefix + "_")).length;
+    const uniqueTags = new Set(
+      person.photos.filter((p) => p.tag && p.tag.startsWith(prefix + "_")).map((p) => p.tag)
+    );
+    return uniqueTags.size;
   }
 
   const piercingCount = countForPrefix("piercing");
