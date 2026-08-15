@@ -18,6 +18,7 @@ export default function Topbar() {
         <NavLink to="/checkin">Check-in</NavLink>
         <NavLink to="/casting">Casting Directors</NavLink>
         <NavLink to="/photo-station">Photo Station</NavLink>
+        <NavLink to="/measurements">Measurements</NavLink>
         <NavLink to="/audition/portland">Portland</NavLink>
         <NavLink to="/audition/seattle">Seattle</NavLink>
       </div>

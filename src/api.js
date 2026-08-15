@@ -23,6 +23,13 @@ export const api = {
 
   getPhotoStationList: (eventId) => request(`/applicants/photo-station-list?event_id=${eventId}`),
 
+  getMeasurementsList: (eventId) => request(`/applicants/measurements-list?event_id=${eventId}`),
+
+  getMeasurement: (applicantId) => request(`/applicants/${applicantId}/measurement`),
+
+  saveMeasurement: (applicantId, payload) =>
+    request(`/applicants/${applicantId}/measurement`, { method: "PUT", body: JSON.stringify(payload) }),
+
   checkinApplicant: (applicantId, payload) =>
     request(`/applicants/${applicantId}/checkin`, { method: "PUT", body: JSON.stringify(payload) }),
 

@@ -7,6 +7,8 @@ import Roster from "./pages/Roster.jsx";
 import CheckIn from "./pages/CheckIn.jsx";
 import CastingDirectors from "./pages/CastingDirectors.jsx";
 import PhotoStation from "./pages/PhotoStation.jsx";
+import MeasurementsQueue from "./pages/MeasurementsQueue.jsx";
+import MeasurementEntry from "./pages/MeasurementEntry.jsx";
 import ApplicantDetail from "./pages/ApplicantDetail.jsx";
 import PhotoCapture from "./pages/PhotoCapture.jsx";
 import ManualAdd from "./pages/ManualAdd.jsx";
@@ -41,6 +43,8 @@ export default function App() {
         <Route path="/checkin" element={<StaffLayout><CheckIn /></StaffLayout>} />
         <Route path="/casting" element={<StaffLayout><CastingDirectors /></StaffLayout>} />
         <Route path="/photo-station" element={<StaffLayout><PhotoStation /></StaffLayout>} />
+        <Route path="/measurements" element={<StaffLayout><MeasurementsQueue /></StaffLayout>} />
+        <Route path="/measurements/:id" element={<StaffLayout><MeasurementEntry /></StaffLayout>} />
         <Route path="/applicant/:id" element={<StaffLayout><ApplicantDetail /></StaffLayout>} />
         <Route path="/photo/:id" element={<StaffLayout><PhotoCapture /></StaffLayout>} />
         <Route path="/audition/portland" element={<StaffLayout><Placeholder title="Portland Auditions" /></StaffLayout>} />
