@@ -30,6 +30,15 @@ export const api = {
 
   getMeasurementsList: (eventId) => request(`/applicants/measurements-list?event_id=${eventId}`),
 
+  importCsv: (file) => {
+    const form = new FormData();
+    form.append("file", file);
+    return fetch(`${API_BASE}/applicants/import-csv`, { method: "POST", body: form }).then((res) => {
+      if (!res.ok) throw new Error("Import failed");
+      return res.json();
+    });
+  },
+
   getEvents: () => request(`/events`),
 
   getMeasurement: (applicantId) => request(`/applicants/${applicantId}/measurement`),
