@@ -15,18 +15,56 @@ const POOL_OPTIONS = [
   { key: "backup", label: "Backup" },
 ];
 
-function distinctValues(list, key) {
-  return [...new Set(list.map((a) => a.measurement?.[key]).filter(Boolean))].sort();
+// Parses "28", "28.5", "28 1/2\"", "30\"" etc into a plain number.
+function parseLeadingNumber(str) {
+  if (str === null || str === undefined) return null;
+  const s = String(str).trim();
+  if (!s) return null;
+  const mixed = s.match(/^(\d+)\s*[-\s]\s*(\d+)\/(\d+)/);
+  if (mixed) return parseFloat(mixed[1]) + parseFloat(mixed[2]) / parseFloat(mixed[3]);
+  const fracOnly = s.match(/^(\d+)\/(\d+)/);
+  if (fracOnly) return parseFloat(fracOnly[1]) / parseFloat(fracOnly[2]);
+  const plain = s.match(/(\d+(?:\.\d+)?)/);
+  if (plain) return parseFloat(plain[1]);
+  return null;
 }
+
+// Parses "5'9\"", "5' 10\"", "5 ft 9 in", "6'" etc into total inches,
+// regardless of spacing around the feet/inches marks.
+function parseHeightToInches(str) {
+  if (str === null || str === undefined) return null;
+  const s = String(str).trim();
+  if (!s) return null;
+  let m = s.match(/(\d+)\s*['’]\s*(\d+(?:\.\d+)?)?/);
+  if (m) return parseFloat(m[1]) * 12 + (m[2] ? parseFloat(m[2]) : 0);
+  m = s.match(/(\d+)\s*ft\.?\s*(\d+(?:\.\d+)?)?\s*(?:in)?/i);
+  if (m) return parseFloat(m[1]) * 12 + (m[2] ? parseFloat(m[2]) : 0);
+  const plain = s.match(/^(\d+(?:\.\d+)?)$/);
+  if (plain) return parseFloat(plain[1]);
+  return null;
+}
+
+function inRange(value, range, parseFn) {
+  const hasMin = range.min !== "" && range.min != null;
+  const hasMax = range.max !== "" && range.max != null;
+  if (!hasMin && !hasMax) return true;
+  if (value === null) return false;
+  const minVal = hasMin ? parseFn(range.min) : -Infinity;
+  const maxVal = hasMax ? parseFn(range.max) : Infinity;
+  if (minVal === null && maxVal === null) return true;
+  return value >= (minVal ?? -Infinity) && value <= (maxVal ?? Infinity);
+}
+
+const EMPTY_RANGE = { min: "", max: "" };
 
 export default function ModelPools() {
   const [all, setAll] = useState([]);
   const [loading, setLoading] = useState(true);
   const [category, setCategory] = useState("female");
-  const [filterHeight, setFilterHeight] = useState("");
-  const [filterWaist, setFilterWaist] = useState("");
-  const [filterDressSize, setFilterDressSize] = useState("");
-  const [filterJacketSize, setFilterJacketSize] = useState("");
+  const [heightRange, setHeightRange] = useState(EMPTY_RANGE);
+  const [waistRange, setWaistRange] = useState(EMPTY_RANGE);
+  const [dressRange, setDressRange] = useState(EMPTY_RANGE);
+  const [jacketRange, setJacketRange] = useState(EMPTY_RANGE);
   const [detailId, setDetailId] = useState(null);
 
   useEffect(() => {
@@ -45,27 +83,22 @@ export default function ModelPools() {
 
   const byCategory = useMemo(() => all.filter((a) => a.category === category), [all, category]);
 
-  const heightOptions = useMemo(() => distinctValues(byCategory, "height"), [byCategory]);
-  const waistOptions = useMemo(() => distinctValues(byCategory, "waist_size"), [byCategory]);
-  const dressOptions = useMemo(() => distinctValues(byCategory, "dress_size"), [byCategory]);
-  const jacketOptions = useMemo(() => distinctValues(byCategory, "jacket_size"), [byCategory]);
-
   const filtered = useMemo(() => {
     return byCategory.filter((a) => {
       const m = a.measurement || {};
-      if (filterHeight && m.height !== filterHeight) return false;
-      if (filterWaist && m.waist_size !== filterWaist) return false;
-      if (filterDressSize && m.dress_size !== filterDressSize) return false;
-      if (filterJacketSize && m.jacket_size !== filterJacketSize) return false;
+      if (!inRange(parseHeightToInches(m.height), heightRange, parseHeightToInches)) return false;
+      if (!inRange(parseLeadingNumber(m.waist_size), waistRange, parseLeadingNumber)) return false;
+      if (!inRange(parseLeadingNumber(m.dress_size), dressRange, parseLeadingNumber)) return false;
+      if (!inRange(parseLeadingNumber(m.jacket_size), jacketRange, parseLeadingNumber)) return false;
       return true;
     });
-  }, [byCategory, filterHeight, filterWaist, filterDressSize, filterJacketSize]);
+  }, [byCategory, heightRange, waistRange, dressRange, jacketRange]);
 
   function clearFilters() {
-    setFilterHeight("");
-    setFilterWaist("");
-    setFilterDressSize("");
-    setFilterJacketSize("");
+    setHeightRange(EMPTY_RANGE);
+    setWaistRange(EMPTY_RANGE);
+    setDressRange(EMPTY_RANGE);
+    setJacketRange(EMPTY_RANGE);
   }
 
   function handlePoolChange(applicantId, pool) {
@@ -80,7 +113,9 @@ export default function ModelPools() {
 
   const showDressFilter = category === "female" || category === "non_binary";
   const showJacketFilter = category === "male" || category === "non_binary";
-  const anyFilterActive = filterHeight || filterWaist || filterDressSize || filterJacketSize;
+  const isEmptyRange = (r) => !r.min && !r.max;
+  const anyFilterActive =
+    !isEmptyRange(heightRange) || !isEmptyRange(waistRange) || !isEmptyRange(dressRange) || !isEmptyRange(jacketRange);
 
   return (
     <div className="page" style={{ maxWidth: 1300 }}>
@@ -114,14 +149,14 @@ export default function ModelPools() {
         ))}
       </div>
 
-      <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap", alignItems: "center" }}>
-        <FilterSelect label="Height" value={filterHeight} onChange={setFilterHeight} options={heightOptions} />
-        <FilterSelect label="Waist" value={filterWaist} onChange={setFilterWaist} options={waistOptions} />
+      <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap", alignItems: "flex-start" }}>
+        <RangeFilter label="Height" range={heightRange} onChange={setHeightRange} placeholderMin="5'7&quot;" placeholderMax="5'10&quot;" />
+        <RangeFilter label="Waist" range={waistRange} onChange={setWaistRange} placeholderMin="28" placeholderMax="30" />
         {showDressFilter && (
-          <FilterSelect label="Dress size" value={filterDressSize} onChange={setFilterDressSize} options={dressOptions} />
+          <RangeFilter label="Dress" range={dressRange} onChange={setDressRange} placeholderMin="4" placeholderMax="6" />
         )}
         {showJacketFilter && (
-          <FilterSelect label="Jacket size" value={filterJacketSize} onChange={setFilterJacketSize} options={jacketOptions} />
+          <RangeFilter label="Jacket" range={jacketRange} onChange={setJacketRange} placeholderMin="40" placeholderMax="42" />
         )}
         {anyFilterActive && (
           <button className="btn btn-outline btn-sm" onClick={clearFilters}>Clear filters</button>
@@ -152,18 +187,73 @@ export default function ModelPools() {
   );
 }
 
-function FilterSelect({ label, value, onChange, options }) {
+function RangeFilter({ label, range, onChange, placeholderMin, placeholderMax }) {
+  const [open, setOpen] = useState(false);
+  const [localMin, setLocalMin] = useState(range.min);
+  const [localMax, setLocalMax] = useState(range.max);
+
+  function toggle() {
+    if (!open) { setLocalMin(range.min); setLocalMax(range.max); }
+    setOpen((o) => !o);
+  }
+
+  function apply() {
+    onChange({ min: localMin, max: localMax });
+    setOpen(false);
+  }
+
+  function clear() {
+    setLocalMin(""); setLocalMax("");
+    onChange(EMPTY_RANGE);
+    setOpen(false);
+  }
+
+  const active = range.min || range.max;
+  const summary = active ? `${label}: ${range.min || "…"}–${range.max || "…"}` : `${label}: All`;
+
   return (
-    <select
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      style={{ padding: "6px 8px", borderRadius: 6, border: "1.5px solid var(--line-strong)", fontSize: 12, background: "var(--paper)" }}
-    >
-      <option value="">{label}: All</option>
-      {options.map((opt) => (
-        <option key={opt} value={opt}>{label}: {opt}</option>
-      ))}
-    </select>
+    <div style={{ position: "relative" }}>
+      <button
+        onClick={toggle}
+        className="btn btn-sm"
+        style={{
+          fontSize: 12,
+          background: active ? "var(--ink)" : "var(--paper)",
+          color: active ? "#fff" : "var(--muted)",
+          border: "1.5px solid var(--line-strong)",
+        }}
+      >
+        {summary}
+      </button>
+      {open && (
+        <div
+          style={{
+            position: "absolute", top: "110%", left: 0, background: "#fff",
+            border: "1.5px solid var(--line-strong)", borderRadius: 8, padding: 10,
+            zIndex: 20, width: 190, boxShadow: "0 6px 16px rgba(0,0,0,0.15)",
+          }}
+        >
+          <div style={{ display: "flex", gap: 6, marginBottom: 8 }}>
+            <input
+              placeholder={placeholderMin || "Min"}
+              value={localMin}
+              onChange={(e) => setLocalMin(e.target.value)}
+              style={{ width: "50%", padding: "5px 6px", fontSize: 12, borderRadius: 5, border: "1.5px solid var(--line-strong)", boxSizing: "border-box" }}
+            />
+            <input
+              placeholder={placeholderMax || "Max"}
+              value={localMax}
+              onChange={(e) => setLocalMax(e.target.value)}
+              style={{ width: "50%", padding: "5px 6px", fontSize: 12, borderRadius: 5, border: "1.5px solid var(--line-strong)", boxSizing: "border-box" }}
+            />
+          </div>
+          <div style={{ display: "flex", gap: 6 }}>
+            <button className="btn btn-outline btn-sm" style={{ flex: 1, fontSize: 11 }} onClick={clear}>Clear</button>
+            <button className="btn btn-brass btn-sm" style={{ flex: 1, fontSize: 11 }} onClick={apply}>Apply</button>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
