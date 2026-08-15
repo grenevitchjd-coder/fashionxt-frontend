@@ -13,7 +13,7 @@ const STATUS_OPTIONS = [
 const POOL_OPTIONS = [
   { key: "pool_a", label: "Pool A" },
   { key: "pool_b", label: "Pool B" },
-  { key: "backup", label: "Backup" },
+  { key: "backup", label: "Alternate" },
 ];
 
 const EMPTY_CONTACT = {

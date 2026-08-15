@@ -51,7 +51,7 @@ export default function App() {
 
         {/* Audition-day stations — no password, needs to be instant */}
         <Route path="/checkin" element={<StaffLayout><CheckIn /></StaffLayout>} />
-        <Route path="/casting" element={<StaffLayout><CastingDirectors /></StaffLayout>} />
+        <Route path="/casting" element={<StaffLayout guarded><CastingDirectors /></StaffLayout>} />
         <Route path="/photo-station" element={<StaffLayout><PhotoStation /></StaffLayout>} />
         <Route path="/measurements" element={<StaffLayout><MeasurementsQueue /></StaffLayout>} />
         <Route path="/measurements/:id" element={<StaffLayout><MeasurementEntry /></StaffLayout>} />

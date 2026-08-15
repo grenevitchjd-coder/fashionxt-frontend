@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-const PASSWORD = "Fash10nxt";
+const PASSWORD = "Fashionxt!";
 
 // A confirmation gate for a single destructive action — same password as
 // the staff area, but scoped to one button rather than a whole page.

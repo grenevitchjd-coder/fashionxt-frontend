@@ -10,7 +10,7 @@ const CATEGORY_TABS = [
 const POOL_GROUPS = [
   { key: "pool_a", label: "Pool A", bg: "#fff8e1", accent: "#c9962b" },
   { key: "pool_b", label: "Pool B", bg: "#e3f2fd", accent: "#3b7ec9" },
-  { key: "backup", label: "Backup", bg: "#f2f2f2", accent: "#888" },
+  { key: "backup", label: "Alternate", bg: "#f2f2f2", accent: "#888" },
 ];
 
 function parseLeadingNumber(str) {

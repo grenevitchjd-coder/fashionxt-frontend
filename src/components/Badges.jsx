@@ -5,7 +5,7 @@ export function StatusPill({ status }) {
 
 export function PoolBadge({ pool }) {
   if (!pool) return null;
-  const labels = { pool_a: "Pool A", pool_b: "Pool B", backup: "Backup" };
+  const labels = { pool_a: "Pool A", pool_b: "Pool B", backup: "Alternate" };
   return <span className={`pool-badge pool-${pool}`}>{labels[pool]}</span>;
 }
 

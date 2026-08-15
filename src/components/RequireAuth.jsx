@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-const PASSWORD = "Fash10nxt";
+const PASSWORD = "Fashionxt!";
 const UNLOCK_KEY = "fx_unlocked";
 
 // Toggle in Vercel: set VITE_REQUIRE_PASSWORD to "false" to disable the

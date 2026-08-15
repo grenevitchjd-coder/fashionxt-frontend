@@ -12,7 +12,7 @@ const CATEGORY_TABS = [
 const POOL_OPTIONS = [
   { key: "pool_a", label: "A" },
   { key: "pool_b", label: "B" },
-  { key: "backup", label: "Backup" },
+  { key: "backup", label: "Alternate" },
 ];
 
 // Parses "28", "28.5", "28 1/2\"", "30\"" etc into a plain number.
