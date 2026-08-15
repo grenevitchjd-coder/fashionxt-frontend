@@ -7,6 +7,7 @@ import AuditionCity from "./pages/AuditionCity.jsx";
 import ModelPools from "./pages/ModelPools.jsx";
 import AddPoolGuest from "./pages/AddPoolGuest.jsx";
 import Roster from "./pages/Roster.jsx";
+import Designers from "./pages/Designers.jsx";
 import CheckIn from "./pages/CheckIn.jsx";
 import CastingDirectors from "./pages/CastingDirectors.jsx";
 import PhotoStation from "./pages/PhotoStation.jsx";
@@ -41,6 +42,7 @@ export default function App() {
         {/* Admin — password required (Model Pools, Decks, Add Guest) */}
         <Route path="/pools" element={<StaffLayout guarded><ModelPools /></StaffLayout>} />
         <Route path="/pools/add-guest" element={<StaffLayout guarded><AddPoolGuest /></StaffLayout>} />
+        <Route path="/designers" element={<StaffLayout guarded><Designers /></StaffLayout>} />
         <Route path="/decks" element={<StaffLayout guarded><Decks /></StaffLayout>} />
         <Route path="/decks/:deckId" element={<StaffLayout guarded><DeckBuilder /></StaffLayout>} />
         <Route path="/add" element={<StaffLayout guarded><ManualAdd /></StaffLayout>} />

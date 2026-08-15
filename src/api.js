@@ -41,6 +41,25 @@ export const api = {
 
   getEvents: () => request(`/events`),
 
+  getShowDays: () => request(`/show-days`),
+
+  getDesigners: (showDayId) => request(`/designers?show_day_id=${showDayId}`),
+
+  addDesigner: (payload) => request(`/designers`, { method: "POST", body: JSON.stringify(payload) }),
+
+  removeDesigner: (designerId) => request(`/designers/${designerId}`, { method: "DELETE" }),
+
+  reorderDesigners: (orderedIds) =>
+    request(`/designers/reorder`, { method: "PUT", body: JSON.stringify({ ordered_ids: orderedIds }) }),
+
+  addAssignment: (designerId, applicantId) =>
+    request(`/designers/${designerId}/assignments`, { method: "POST", body: JSON.stringify({ applicant_id: applicantId }) }),
+
+  removeAssignment: (designerId, applicantId) =>
+    request(`/designers/${designerId}/assignments/${applicantId}`, { method: "DELETE" }),
+
+  getFinalRoster: (showDayId) => request(`/final-roster?show_day_id=${showDayId}`),
+
   getDirectory: () => request(`/applicants/directory`),
 
   resetApplicant: (applicantId) => request(`/applicants/${applicantId}/reset`, { method: "POST" }),
