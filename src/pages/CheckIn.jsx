@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../api.js";
 import { useEvent } from "../components/EventContext.jsx";
+import { AuditionTag } from "../components/Badges.jsx";
 
 export default function CheckIn() {
   const { eventId } = useEvent();
@@ -36,21 +37,13 @@ export default function CheckIn() {
       .slice(0, 25);
   }, [query, allApplicants]);
 
-  // Numbers already in use for THIS event — checked instantly against the
-  // preloaded list, no network round-trip needed to catch a duplicate.
-  const takenNumbers = useMemo(() => {
-    const map = {};
-    for (const a of allApplicants) {
-      if (a.event_id === Number(eventId) && a.audition_number != null) {
-        map[a.audition_number] = a.full_name;
-      }
-    }
-    return map;
-  }, [allApplicants, eventId]);
-
-  function handleAssigned(applicantId, number) {
+  function handleAssigned(applicantId, updated) {
     setAllApplicants((prev) =>
-      prev.map((a) => (a.id === applicantId ? { ...a, event_id: Number(eventId), audition_number: number } : a))
+      prev.map((a) =>
+        a.id === applicantId
+          ? { ...a, event_id: Number(eventId), audition_number: updated.audition_number, preselect: updated.preselect }
+          : a
+      )
     );
   }
 
@@ -69,7 +62,7 @@ export default function CheckIn() {
     <div className="page">
       <h1 style={{ fontSize: 20, marginBottom: 4 }}>Check-in</h1>
       <p style={{ color: "var(--muted)", fontSize: 14, marginBottom: 16 }}>
-        {loading ? "Loading applicant list…" : `${allApplicants.length} applicants loaded — search is instant`}
+        {loading ? "Loading applicant list…" : `${allApplicants.length} applicants loaded — search is instant. Numbers assign automatically in check-in order.`}
       </p>
 
       <input
@@ -94,9 +87,8 @@ export default function CheckIn() {
           key={person.id}
           person={person}
           eventId={eventId}
-          takenNumbers={takenNumbers}
-          onAssigned={(number) => {
-            handleAssigned(person.id, number);
+          onAssigned={(updated) => {
+            handleAssigned(person.id, updated);
             setQuery("");
             searchRef.current?.focus();
           }}
@@ -106,27 +98,20 @@ export default function CheckIn() {
   );
 }
 
-function CheckInRow({ person, eventId, takenNumbers, onAssigned }) {
+function CheckInRow({ person, eventId, onAssigned }) {
   const alreadyCheckedIn = person.event_id === Number(eventId) && person.audition_number;
-  const [number, setNumber] = useState(alreadyCheckedIn ? String(person.audition_number) : "");
+  const [preselect, setPreselect] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  const numVal = number ? Number(number) : null;
-  const conflictName =
-    numVal && takenNumbers[numVal] && takenNumbers[numVal] !== person.full_name ? takenNumbers[numVal] : null;
-
-  async function handleSubmit(e) {
-    e.preventDefault();
-    if (!numVal) return setError("Enter a number");
-    if (conflictName) return setError(`Already used by ${conflictName}`);
+  async function handleCheckIn() {
     setSaving(true);
     setError("");
     try {
-      await api.checkinApplicant(person.id, { event_id: Number(eventId), audition_number: numVal });
-      onAssigned(numVal);
+      const updated = await api.checkinApplicant(person.id, { event_id: Number(eventId), preselect });
+      onAssigned(updated);
     } catch (err) {
-      let msg = "Couldn't assign that number.";
+      let msg = "Couldn't check in.";
       try {
         const match = err.message.match(/:\s*(\{.*\})$/s);
         if (match) {
@@ -140,34 +125,45 @@ function CheckInRow({ person, eventId, takenNumbers, onAssigned }) {
     }
   }
 
+  if (alreadyCheckedIn) {
+    return (
+      <div className="card">
+        <div className="card-row">
+          <AuditionTag number={person.audition_number} />
+          <div className="card-main">
+            <div className="card-name">{person.full_name}</div>
+            <div className="card-meta">
+              Checked in{person.preselect ? " · preselect" : ""}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="card">
-      <form onSubmit={handleSubmit} className="card-row" style={{ alignItems: "flex-start" }}>
+      <div className="card-row" style={{ alignItems: "flex-start" }}>
         <div className="card-main">
           <div className="card-name">{person.full_name}</div>
           <div className="card-meta">
             {person.phone || person.email} · {person.category.replace("_", "-")}
           </div>
           {error && <div style={{ color: "var(--no)", fontSize: 12, marginTop: 4 }}>{error}</div>}
-          {!error && conflictName && (
-            <div style={{ color: "var(--maybe)", fontSize: 12, marginTop: 4 }}>Already used by {conflictName}</div>
-          )}
         </div>
-        <input
-          type="number"
-          value={number}
-          onChange={(e) => { setNumber(e.target.value); setError(""); }}
-          placeholder="#"
-          style={{ width: 70, padding: "8px 10px", borderRadius: 8, border: "1.5px solid var(--line-strong)", fontSize: 15 }}
-        />
+        <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, flexShrink: 0, whiteSpace: "nowrap" }}>
+          <input type="checkbox" checked={preselect} onChange={(e) => setPreselect(e.target.checked)} />
+          Preselect
+        </label>
         <button
-          type="submit"
           className="btn btn-brass btn-sm"
-          disabled={saving || !numVal || !!conflictName}
+          onClick={handleCheckIn}
+          disabled={saving}
+          style={{ flexShrink: 0 }}
         >
-          {saving ? "…" : alreadyCheckedIn ? "Update" : "Assign"}
+          {saving ? "…" : "Check In"}
         </button>
-      </form>
+      </div>
     </div>
   );
 }
