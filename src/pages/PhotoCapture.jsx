@@ -1,83 +1,145 @@
-import { useRef, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import { api } from "../api.js";
 
-const TAGS = ["front", "side", "swim", "other"];
+const REQUIRED_SLOTS = [
+  { tag: "headshot", label: "Headshot" },
+  { tag: "full_frontal", label: "Full Frontal" },
+  { tag: "left_side", label: "Left Side" },
+  { tag: "right_side", label: "Right Side" },
+];
 
 export default function PhotoCapture() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [applicant, setApplicant] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [uploadingTag, setUploadingTag] = useState(null);
   const fileInputRef = useRef(null);
-  const [preview, setPreview] = useState(null);
-  const [file, setFile] = useState(null);
-  const [tag, setTag] = useState("front");
-  const [uploading, setUploading] = useState(false);
-  const [done, setDone] = useState(false);
+  const pendingTagRef = useRef(null);
 
-  function handleFileChange(e) {
-    const f = e.target.files?.[0];
-    if (!f) return;
-    setFile(f);
-    setPreview(URL.createObjectURL(f));
-  }
+  useEffect(() => {
+    load();
+  }, [id]);
 
-  async function handleUpload() {
-    if (!file) return;
-    setUploading(true);
+  async function load() {
+    setLoading(true);
     try {
-      await api.uploadPhoto(id, file, tag);
-      setDone(true);
-      setFile(null);
-      setPreview(null);
+      const data = await api.getApplicantDetail(id);
+      setApplicant(data);
     } finally {
-      setUploading(false);
+      setLoading(false);
     }
   }
 
+  // Most-recent photo per tag — retaking uploads a new photo with the same
+  // tag, and this always shows the latest one as the slot's thumbnail.
+  function latestForTag(tag) {
+    const matches = applicant.photos.filter((p) => p.tag === tag);
+    return matches.length ? matches[matches.length - 1] : null;
+  }
+
+  function countForPrefix(prefix) {
+    return applicant.photos.filter((p) => p.tag && p.tag.startsWith(prefix + "_")).length;
+  }
+
+  function openCamera(tag) {
+    pendingTagRef.current = tag;
+    fileInputRef.current?.click();
+  }
+
+  async function handleFileChange(e) {
+    const file = e.target.files?.[0];
+    const tag = pendingTagRef.current;
+    if (!file || !tag) return;
+    setUploadingTag(tag);
+    try {
+      await api.uploadPhoto(id, file, tag);
+      await load();
+    } finally {
+      setUploadingTag(null);
+      e.target.value = "";
+    }
+  }
+
+  if (loading) return <div className="page"><p style={{ color: "var(--muted)" }}>Loading…</p></div>;
+  if (!applicant) return <div className="page"><p>Not found.</p></div>;
+
+  const piercingCount = countForPrefix("piercing");
+  const tattooCount = countForPrefix("tattoo");
+
   return (
     <div className="page">
-      <h1 style={{ fontSize: 20, marginBottom: 16 }}>Add photo</h1>
+      <Link to={`/photo-station`} style={{ fontSize: 13, color: "var(--muted)" }}>← Back to Photo Station</Link>
+      <h1 style={{ fontSize: 20, margin: "8px 0 2px" }}>{applicant.full_name}</h1>
+      <p style={{ color: "var(--muted)", fontSize: 14, marginBottom: 20 }}>
+        #{String(applicant.audition_number).padStart(3, "0")} · {applicant.category.replace("_", "-")}
+      </p>
 
-      {preview ? (
-        <div className="card" style={{ textAlign: "center" }}>
-          <img
-            src={preview}
-            alt="preview"
-            style={{ maxWidth: "100%", borderRadius: 8, marginBottom: 12 }}
-          />
-          <div className="field">
-            <span className="field-label">Tag</span>
-            <select value={tag} onChange={(e) => setTag(e.target.value)}>
-              {TAGS.map((t) => <option key={t} value={t}>{t}</option>)}
-            </select>
-          </div>
-          <div style={{ display: "flex", gap: 8 }}>
+      <span className="field-label">Required shots — tap any photo to retake it</span>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 24 }}>
+        {REQUIRED_SLOTS.map((slot) => {
+          const photo = latestForTag(slot.tag);
+          const isUploading = uploadingTag === slot.tag;
+          return (
             <button
-              className="btn btn-outline"
-              style={{ flex: 1 }}
-              onClick={() => { setFile(null); setPreview(null); }}
+              key={slot.tag}
+              onClick={() => openCamera(slot.tag)}
+              disabled={isUploading}
+              style={{
+                border: photo ? "2px solid var(--yes)" : "1.5px dashed var(--line-strong)",
+                borderRadius: 10,
+                background: photo ? "var(--yes-bg)" : "var(--paper)",
+                padding: 0,
+                overflow: "hidden",
+                cursor: "pointer",
+                textAlign: "left",
+                position: "relative",
+              }}
             >
-              Retake
+              {photo ? (
+                <>
+                  <img src={photo.url} alt={slot.label} style={{ width: "100%", aspectRatio: "3/4", objectFit: "cover", display: "block" }} />
+                  <div
+                    style={{
+                      position: "absolute", top: 6, right: 6,
+                      background: "rgba(20,21,26,0.75)", color: "#fff",
+                      fontSize: 10, fontWeight: 600, padding: "3px 7px", borderRadius: 100,
+                    }}
+                  >
+                    ↻ retake
+                  </div>
+                </>
+              ) : (
+                <div style={{ aspectRatio: "3/4", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--muted)", fontSize: 13 }}>
+                  {isUploading ? "Uploading…" : "Tap to shoot"}
+                </div>
+              )}
+              <div style={{ padding: "6px 8px", fontSize: 12, fontWeight: 600, color: photo ? "var(--yes)" : "var(--muted)" }}>
+                {photo ? "✓ " : ""}{slot.label}
+              </div>
             </button>
-            <button
-              className="btn btn-brass"
-              style={{ flex: 1 }}
-              onClick={handleUpload}
-              disabled={uploading}
-            >
-              {uploading ? "Uploading…" : "Save photo"}
-            </button>
-          </div>
-        </div>
-      ) : (
-        <button
-          className="btn btn-primary btn-block"
-          style={{ padding: "40px 16px" }}
-          onClick={() => fileInputRef.current?.click()}
-        >
-          Open camera
-        </button>
-      )}
+          );
+        })}
+      </div>
+
+      <RepeatableSlotGroup
+        title="Piercings"
+        prefix="piercing"
+        count={piercingCount}
+        photos={applicant.photos}
+        onCapture={openCamera}
+        uploadingTag={uploadingTag}
+      />
+
+      <RepeatableSlotGroup
+        title="Tattoos"
+        prefix="tattoo"
+        count={tattooCount}
+        photos={applicant.photos}
+        onCapture={openCamera}
+        uploadingTag={uploadingTag}
+      />
 
       <input
         ref={fileInputRef}
@@ -88,17 +150,79 @@ export default function PhotoCapture() {
         onChange={handleFileChange}
       />
 
-      {done && (
-        <div className="card" style={{ background: "var(--yes-bg)", borderColor: "var(--yes)", marginTop: 16 }}>
-          <p style={{ color: "var(--yes)", margin: 0, fontWeight: 600 }}>Photo saved.</p>
-          <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
-            <button className="btn btn-outline btn-sm" onClick={() => setDone(false)}>Add another</button>
-            <button className="btn btn-primary btn-sm" onClick={() => navigate(`/applicant/${id}`)}>
-              Back to profile
+      <button className="btn btn-primary btn-block" style={{ marginTop: 24 }} onClick={() => navigate("/photo-station")}>
+        Done — back to queue
+      </button>
+    </div>
+  );
+}
+
+function RepeatableSlotGroup({ title, prefix, count, photos, onCapture, uploadingTag }) {
+  const nextIndex = count + 1;
+  const nextTag = `${prefix}_${nextIndex}`;
+  const isUploadingNext = uploadingTag === nextTag;
+
+  const existing = [];
+  for (let i = 1; i <= count; i++) {
+    const tag = `${prefix}_${i}`;
+    const matches = photos.filter((p) => p.tag === tag);
+    if (matches.length) existing.push({ index: i, tag, photo: matches[matches.length - 1] });
+  }
+
+  return (
+    <div style={{ marginBottom: 24 }}>
+      <span className="field-label">{title} — tap a photo to retake it</span>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+        {existing.map(({ index, tag, photo }) => {
+          const isUploadingThis = uploadingTag === tag;
+          return (
+            <button
+              key={index}
+              onClick={() => onCapture(tag)}
+              disabled={isUploadingThis}
+              style={{ width: 90, padding: 0, border: "none", background: "transparent", cursor: "pointer" }}
+            >
+              <div style={{ position: "relative" }}>
+                <img
+                  src={photo.url}
+                  alt={`${title} ${index}`}
+                  style={{ width: 90, height: 90, objectFit: "cover", borderRadius: 8, border: "2px solid var(--yes)", display: "block" }}
+                />
+                {isUploadingThis && (
+                  <div style={{ position: "absolute", inset: 0, background: "rgba(255,255,255,0.8)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, borderRadius: 8 }}>
+                    Uploading…
+                  </div>
+                )}
+              </div>
+              <div style={{ fontSize: 11, textAlign: "center", marginTop: 4, color: "var(--yes)", fontWeight: 600 }}>
+                ✓ #{index} · retake
+              </div>
             </button>
-          </div>
-        </div>
-      )}
+          );
+        })}
+
+        <button
+          onClick={() => onCapture(nextTag)}
+          disabled={isUploadingNext}
+          style={{
+            width: 90,
+            height: 90,
+            border: "1.5px dashed var(--line-strong)",
+            borderRadius: 8,
+            background: "var(--paper)",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: 12,
+            color: "var(--brass)",
+            fontWeight: 600,
+            cursor: "pointer",
+          }}
+        >
+          {isUploadingNext ? "…" : `+ Add #${nextIndex}`}
+        </button>
+      </div>
     </div>
   );
 }

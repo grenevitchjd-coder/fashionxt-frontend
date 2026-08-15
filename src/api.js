@@ -21,6 +21,8 @@ export const api = {
 
   getCheckinList: () => request(`/applicants/checkin-list`),
 
+  getPhotoStationList: (eventId) => request(`/applicants/photo-station-list?event_id=${eventId}`),
+
   checkinApplicant: (applicantId, payload) =>
     request(`/applicants/${applicantId}/checkin`, { method: "PUT", body: JSON.stringify(payload) }),
 
