@@ -10,10 +10,14 @@ export default function Topbar() {
         FashioNXT Casting
       </NavLink>
       <div className="topbar-nav">
-        <NavLink to="/roster">Roster</NavLink>
-        <NavLink to="/checkin">Check-in</NavLink>
-        <NavLink to="/add">Add guest</NavLink>
+        <NavLink to="/" end>Roster</NavLink>
+        <NavLink to="/pools">Model Pools</NavLink>
         <NavLink to="/decks">Decks</NavLink>
+        <NavLink to="/add">Add guest</NavLink>
+        <span style={{ width: 1, background: "rgba(255,255,255,0.15)", margin: "0 2px" }} />
+        <NavLink to="/checkin">Check-in</NavLink>
+        <NavLink to="/audition/portland">Portland</NavLink>
+        <NavLink to="/audition/seattle">Seattle</NavLink>
       </div>
       <input
         value={eventId}
