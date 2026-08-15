@@ -99,15 +99,24 @@ export default function MeasurementEntry() {
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 20 }}>
           {TEXT_FIELDS.map((f) => (
             <div key={f.key}>
-              <label style={{ fontSize: 12, color: "var(--muted)", display: "block", marginBottom: 4 }}>{f.label}</label>
+              <label
+                style={{
+                  fontSize: 11,
+                  display: "block",
+                  marginBottom: 3,
+                  color: form[f.key] ? "var(--muted)" : "var(--ink)",
+                  fontWeight: form[f.key] ? 400 : 700,
+                }}
+              >
+                {f.label}
+              </label>
               <input
                 value={form[f.key] || ""}
                 onChange={(e) => update(f.key, e.target.value)}
-                style={{ width: "100%", padding: "8px 10px", borderRadius: 8, border: "1.5px solid var(--line-strong)", fontSize: 14, boxSizing: "border-box" }}
+                style={{ width: "100%", padding: "6px 8px", borderRadius: 6, border: "1.5px solid var(--line-strong)", fontSize: 13, boxSizing: "border-box" }}
               />
             </div>
           ))}
-        </div>
 
         <span className="field-label">Notes</span>
         <textarea
