@@ -241,28 +241,28 @@ export default function FinalRoster() {
       {loading ? (
         <p style={{ color: "var(--muted)" }}>Loading…</p>
       ) : (
-        <div style={{ overflowX: "auto", border: "1.5px solid var(--line-strong)", borderRadius: 10 }}>
-          <table style={{ borderCollapse: "collapse", width: "100%", fontSize: 12, whiteSpace: "nowrap" }}>
+        <div style={{ overflow: "auto", maxHeight: "65vh", border: "1.5px solid var(--line-strong)", borderRadius: 10 }}>
+          <table style={{ borderCollapse: "collapse", width: "100%", fontSize: 11, whiteSpace: "nowrap" }}>
             <thead>
-              <tr style={{ background: "var(--ink)", color: "#fff" }}>
-                <Th>Photo</Th>
-                <Th>Name</Th>
-                <Th>Height</Th>
-                <Th>Bust/Chest</Th>
-                <Th>Waist</Th>
-                <Th>Hip</Th>
-                <Th>Shoe</Th>
-                {showDress && <Th>Dress</Th>}
-                {showJacket && <Th>Jacket</Th>}
-                <Th>Agency</Th>
-                <Th>Minor</Th>
-                <Th>Swim OK</Th>
-                <Th>Lingerie OK</Th>
-                <Th>See-thru OK</Th>
-                <Th>Avail Th</Th>
-                <Th>Avail Fr</Th>
-                <Th>Avail Sa</Th>
-                <Th>Designer assignment</Th>
+              <tr>
+                <Th width={36}>Photo</Th>
+                <Th width={110}>Name</Th>
+                <Th width={54}>Height</Th>
+                <Th width={54}>Bust</Th>
+                <Th width={44}>Waist</Th>
+                <Th width={40}>Hip</Th>
+                <Th width={36}>Shoe</Th>
+                {showDress && <Th width={36}>Dress</Th>}
+                {showJacket && <Th width={36}>Jkt</Th>}
+                <Th width={80}>Agency</Th>
+                <Th width={38} title="Minor">Min</Th>
+                <Th width={38} title="Swim OK">Swim</Th>
+                <Th width={38} title="Lingerie OK">Ling</Th>
+                <Th width={38} title="See-through OK">STO</Th>
+                <Th width={22} title="Available Thursday">Th</Th>
+                <Th width={22} title="Available Friday">Fr</Th>
+                <Th width={22} title="Available Saturday">Sa</Th>
+                <Th width={180}>Designer assignment</Th>
               </tr>
             </thead>
             <tbody>
@@ -301,8 +301,18 @@ function RangeInputs({ label, min, max, setMin, setMax, ph1, ph2 }) {
   );
 }
 
-function Th({ children }) {
-  return <th style={{ padding: "8px 10px", textAlign: "left", fontSize: 11, fontWeight: 700 }}>{children}</th>;
+function Th({ children, width, title }) {
+  return (
+    <th
+      title={title}
+      style={{
+        padding: "6px 5px", textAlign: "left", fontSize: 10, fontWeight: 700,
+        position: "sticky", top: 0, background: "var(--ink)", color: "#fff", zIndex: 2, width,
+      }}
+    >
+      {children}
+    </th>
+  );
 }
 
 function PoolGroup({ group, showDress, showJacket, designers, activeDesigner, onFieldSave, onMinorSave, onAgencySave, onPhoto, onAssign, onUnassign }) {
@@ -310,7 +320,7 @@ function PoolGroup({ group, showDress, showJacket, designers, activeDesigner, on
   return (
     <>
       <tr>
-        <td colSpan={20} style={{ padding: "8px 10px", fontWeight: 800, fontSize: 12, background: group.accent, color: "#fff" }}>
+        <td colSpan={20} style={{ padding: "6px 8px", fontWeight: 800, fontSize: 11, background: group.accent, color: "#fff" }}>
           {group.label} ({group.people.length})
         </td>
       </tr>
@@ -331,16 +341,16 @@ function PoolGroup({ group, showDress, showJacket, designers, activeDesigner, on
           onUnassign={onUnassign}
         />
       ))}
-      <tr><td colSpan={20} style={{ height: group.key === "pool_b" ? 20 : 0 }} /></tr>
+      <tr><td colSpan={20} style={{ height: group.key === "pool_b" ? 16 : 0 }} /></tr>
     </>
   );
 }
 
-function Cell({ children }) {
-  return <td style={{ padding: "4px 6px", borderBottom: "1px solid rgba(0,0,0,0.06)" }}>{children}</td>;
+function Cell({ children, tight }) {
+  return <td style={{ padding: tight ? "3px 4px" : "3px 5px", borderBottom: "1px solid rgba(0,0,0,0.06)" }}>{children}</td>;
 }
 
-function EditableCell({ value, onSave, width = 60 }) {
+function EditableCell({ value, onSave, width = 50 }) {
   const [local, setLocal] = useState(value || "");
   useEffect(() => setLocal(value || ""), [value]);
   return (
@@ -348,7 +358,7 @@ function EditableCell({ value, onSave, width = 60 }) {
       value={local}
       onChange={(e) => setLocal(e.target.value)}
       onBlur={() => { if (local !== (value || "")) onSave(local); }}
-      style={{ width, padding: "3px 5px", border: "1px solid transparent", borderRadius: 4, fontSize: 12, background: "transparent" }}
+      style={{ width, padding: "2px 4px", border: "1px solid transparent", borderRadius: 4, fontSize: 11, background: "transparent" }}
       onFocus={(e) => (e.target.style.border = "1px solid var(--brass)")}
     />
   );
@@ -356,21 +366,67 @@ function EditableCell({ value, onSave, width = 60 }) {
 
 function YesNoMini({ value, onChange }) {
   return (
-    <div style={{ display: "flex", border: "1px solid var(--line-strong)", borderRadius: 5, overflow: "hidden", width: "fit-content" }}>
+    <div style={{ display: "flex", border: "1px solid var(--line-strong)", borderRadius: 4, overflow: "hidden", width: "fit-content" }}>
       <button
         type="button"
         onClick={() => onChange(true)}
-        style={{ padding: "2px 6px", fontSize: 10, fontWeight: 700, border: "none", cursor: "pointer", background: value === true ? "var(--yes)" : "var(--paper)", color: value === true ? "#fff" : "var(--muted)" }}
+        style={{ padding: "1px 4px", fontSize: 9, fontWeight: 700, border: "none", cursor: "pointer", background: value === true ? "var(--yes)" : "var(--paper)", color: value === true ? "#fff" : "var(--muted)" }}
       >
         Y
       </button>
       <button
         type="button"
         onClick={() => onChange(false)}
-        style={{ padding: "2px 6px", fontSize: 10, fontWeight: 700, border: "none", cursor: "pointer", background: value === false ? "var(--no)" : "var(--paper)", color: value === false ? "#fff" : "var(--muted)" }}
+        style={{ padding: "1px 4px", fontSize: 9, fontWeight: 700, border: "none", cursor: "pointer", background: value === false ? "var(--no)" : "var(--paper)", color: value === false ? "#fff" : "var(--muted)" }}
       >
         N
       </button>
+    </div>
+  );
+}
+
+// Click any designer to add — stays open so multiple can be picked in one
+// go, only closes when you click outside it.
+function MultiAssignPopover({ available, onAssign }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    function handleClick(e) {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    }
+    if (open) document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [open]);
+
+  if (available.length === 0) return null;
+
+  return (
+    <div ref={ref} style={{ position: "relative" }}>
+      <button
+        onClick={() => setOpen((o) => !o)}
+        style={{ fontSize: 10, padding: "2px 6px", borderRadius: 4, border: "1px solid var(--line-strong)", background: "var(--paper)", cursor: "pointer" }}
+      >
+        + assign ▾
+      </button>
+      {open && (
+        <div
+          style={{
+            position: "absolute", top: "110%", left: 0, background: "#fff", border: "1.5px solid var(--line-strong)",
+            borderRadius: 6, boxShadow: "0 6px 16px rgba(0,0,0,0.18)", zIndex: 10, minWidth: 160, maxHeight: 200, overflowY: "auto",
+          }}
+        >
+          {available.map((d) => (
+            <button
+              key={d.id}
+              onClick={() => onAssign(d.id)}
+              style={{ display: "block", width: "100%", textAlign: "left", padding: "6px 10px", fontSize: 11, border: "none", background: "transparent", cursor: "pointer", borderBottom: "1px solid var(--line)" }}
+            >
+              D{d.order_in_day} {d.name}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -388,16 +444,16 @@ function RosterRow({ person, bg, showDress, showJacket, designers, activeDesigne
 
   return (
     <tr style={{ background: bg }}>
-      <Cell>
+      <Cell tight>
         <button
           onClick={() => fileInputRef.current?.click()}
-          style={{ width: 32, height: 32, borderRadius: 6, overflow: "hidden", border: "none", padding: 0, cursor: "pointer", background: "var(--line)" }}
+          style={{ width: 26, height: 26, borderRadius: 5, overflow: "hidden", border: "none", padding: 0, cursor: "pointer", background: "var(--line)" }}
           title="Click to retake"
         >
           {person.photo_url ? (
             <img src={person.photo_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
           ) : (
-            <span style={{ fontSize: 8, color: "var(--muted)" }}>none</span>
+            <span style={{ fontSize: 7, color: "var(--muted)" }}>none</span>
           )}
         </button>
         <input
@@ -409,30 +465,30 @@ function RosterRow({ person, bg, showDress, showJacket, designers, activeDesigne
           onChange={(e) => { const f = e.target.files?.[0]; if (f) onPhoto(person.id, f); e.target.value = ""; }}
         />
       </Cell>
-      <Cell><strong style={{ fontSize: 12 }}>{person.full_name}</strong></Cell>
+      <Cell><strong style={{ fontSize: 11 }}>{person.full_name}</strong></Cell>
       <Cell><EditableCell value={m.height} onSave={(v) => onFieldSave(person.id, "height", v)} /></Cell>
       <Cell><EditableCell value={m.bust_chest} onSave={(v) => onFieldSave(person.id, "bust_chest", v)} /></Cell>
-      <Cell><EditableCell value={m.waist_size} onSave={(v) => onFieldSave(person.id, "waist_size", v)} /></Cell>
-      <Cell><EditableCell value={m.hip_size} onSave={(v) => onFieldSave(person.id, "hip_size", v)} /></Cell>
-      <Cell><EditableCell value={m.shoe_size} onSave={(v) => onFieldSave(person.id, "shoe_size", v)} width={40} /></Cell>
-      {showDress && <Cell><EditableCell value={m.dress_size} onSave={(v) => onFieldSave(person.id, "dress_size", v)} width={40} /></Cell>}
-      {showJacket && <Cell><EditableCell value={m.jacket_size} onSave={(v) => onFieldSave(person.id, "jacket_size", v)} width={40} /></Cell>}
-      <Cell><EditableCell value={person.agency_name} onSave={(v) => onAgencySave(person.id, v)} width={90} /></Cell>
-      <Cell><YesNoMini value={person.is_minor} onChange={(v) => onMinorSave(person.id, v)} /></Cell>
-      <Cell><YesNoMini value={m.swim_ok} onChange={(v) => onFieldSave(person.id, "swim_ok", v)} /></Cell>
-      <Cell><YesNoMini value={m.lingerie_ok} onChange={(v) => onFieldSave(person.id, "lingerie_ok", v)} /></Cell>
-      <Cell><YesNoMini value={m.see_through_ok} onChange={(v) => onFieldSave(person.id, "see_through_ok", v)} /></Cell>
-      <Cell>
+      <Cell><EditableCell value={m.waist_size} onSave={(v) => onFieldSave(person.id, "waist_size", v)} width={36} /></Cell>
+      <Cell><EditableCell value={m.hip_size} onSave={(v) => onFieldSave(person.id, "hip_size", v)} width={36} /></Cell>
+      <Cell><EditableCell value={m.shoe_size} onSave={(v) => onFieldSave(person.id, "shoe_size", v)} width={30} /></Cell>
+      {showDress && <Cell><EditableCell value={m.dress_size} onSave={(v) => onFieldSave(person.id, "dress_size", v)} width={30} /></Cell>}
+      {showJacket && <Cell><EditableCell value={m.jacket_size} onSave={(v) => onFieldSave(person.id, "jacket_size", v)} width={30} /></Cell>}
+      <Cell><EditableCell value={person.agency_name} onSave={(v) => onAgencySave(person.id, v)} width={72} /></Cell>
+      <Cell tight><YesNoMini value={person.is_minor} onChange={(v) => onMinorSave(person.id, v)} /></Cell>
+      <Cell tight><YesNoMini value={m.swim_ok} onChange={(v) => onFieldSave(person.id, "swim_ok", v)} /></Cell>
+      <Cell tight><YesNoMini value={m.lingerie_ok} onChange={(v) => onFieldSave(person.id, "lingerie_ok", v)} /></Cell>
+      <Cell tight><YesNoMini value={m.see_through_ok} onChange={(v) => onFieldSave(person.id, "see_through_ok", v)} /></Cell>
+      <Cell tight>
         <input type="checkbox" checked={!!m.avail_thursday} onChange={(e) => onFieldSave(person.id, "avail_thursday", e.target.checked)} />
       </Cell>
-      <Cell>
+      <Cell tight>
         <input type="checkbox" checked={!!m.avail_friday} onChange={(e) => onFieldSave(person.id, "avail_friday", e.target.checked)} />
       </Cell>
-      <Cell>
+      <Cell tight>
         <input type="checkbox" checked={!!m.avail_saturday} onChange={(e) => onFieldSave(person.id, "avail_saturday", e.target.checked)} />
       </Cell>
       <Cell>
-        <div style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-start", minWidth: 180 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-start" }}>
           <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
             {person.assignments.map((a) => (
               <span
@@ -451,7 +507,7 @@ function RosterRow({ person, bg, showDress, showJacket, designers, activeDesigne
               <button
                 onClick={() => (isAssignedToActive ? onUnassign(person.id, activeDesigner.id) : onAssign(person.id, activeDesigner.id))}
                 style={{
-                  fontSize: 11, fontWeight: 700, padding: "4px 8px", borderRadius: 5, cursor: "pointer",
+                  fontSize: 10, fontWeight: 700, padding: "3px 6px", borderRadius: 5, cursor: "pointer",
                   border: isAssignedToActive ? "1.5px solid var(--yes)" : "1.5px solid var(--brass)",
                   background: isAssignedToActive ? "var(--yes-bg)" : "var(--brass)",
                   color: isAssignedToActive ? "var(--yes)" : "#fff",
@@ -460,24 +516,13 @@ function RosterRow({ person, bg, showDress, showJacket, designers, activeDesigne
                 {isAssignedToActive ? `✓ On D${activeDesigner.order_in_day} — remove` : `+ Add to D${activeDesigner.order_in_day} ${activeDesigner.name}`}
               </button>
               {adjacentConflict && (
-                <span style={{ fontSize: 10, color: "var(--no)", fontWeight: 600 }}>
+                <span style={{ fontSize: 9, color: "var(--no)", fontWeight: 600 }}>
                   ⚠ also walks D{adjacentConflict.order_in_day} — back-to-back
                 </span>
               )}
             </div>
           ) : (
-            available.length > 0 && (
-              <select
-                value=""
-                onChange={(e) => { if (e.target.value) onAssign(person.id, Number(e.target.value)); }}
-                style={{ fontSize: 10, padding: "2px 4px", borderRadius: 4, border: "1px solid var(--line-strong)" }}
-              >
-                <option value="">+ assign</option>
-                {available.map((d) => (
-                  <option key={d.id} value={d.id}>D{d.order_in_day} {d.name}</option>
-                ))}
-              </select>
-            )
+            <MultiAssignPopover available={available} onAssign={(designerId) => onAssign(person.id, designerId)} />
           )}
         </div>
       </Cell>

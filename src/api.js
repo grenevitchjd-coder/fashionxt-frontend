@@ -55,6 +55,9 @@ export const api = {
   reorderDesigners: (orderedIds) =>
     request(`/designers/reorder`, { method: "PUT", body: JSON.stringify({ ordered_ids: orderedIds }) }),
 
+  reorderAssignments: (designerId, orderedApplicantIds) =>
+    request(`/designers/${designerId}/assignments/reorder`, { method: "PUT", body: JSON.stringify({ ordered_applicant_ids: orderedApplicantIds }) }),
+
   addAssignment: (designerId, applicantId) =>
     request(`/designers/${designerId}/assignments`, { method: "POST", body: JSON.stringify({ applicant_id: applicantId }) }),
 
