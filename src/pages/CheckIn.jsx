@@ -124,7 +124,7 @@ export default function CheckIn() {
 
 function CheckInRow({ person, eventId, onAssigned }) {
   const alreadyCheckedIn = person.event_id === Number(eventId) && person.audition_number;
-  const [preselect, setPreselect] = useState(false);
+  const [preselect, setPreselect] = useState(!!person.preselect);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -175,7 +175,15 @@ function CheckInRow({ person, eventId, onAssigned }) {
           </div>
           {error && <div style={{ color: "var(--no)", fontSize: 12, marginTop: 4 }}>{error}</div>}
         </div>
-        <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, flexShrink: 0, whiteSpace: "nowrap" }}>
+        <label
+          style={{
+            display: "flex", alignItems: "center", gap: 6, fontSize: 13, flexShrink: 0, whiteSpace: "nowrap",
+            padding: preselect ? "4px 8px" : 0, borderRadius: 6,
+            background: preselect ? "#c9962b" : "transparent",
+            color: preselect ? "#fff" : "inherit",
+            fontWeight: preselect ? 700 : 400,
+          }}
+        >
           <input type="checkbox" checked={preselect} onChange={(e) => setPreselect(e.target.checked)} />
           Fast Track
         </label>
