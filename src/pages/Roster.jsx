@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../api.js";
 import { StatusPill } from "../components/Badges.jsx";
+import PasswordConfirm from "../components/PasswordConfirm.jsx";
 
 export default function Roster() {
   const [all, setAll] = useState([]);
@@ -9,6 +10,8 @@ export default function Roster() {
   const [query, setQuery] = useState("");
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState(null);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [resetResult, setResetResult] = useState(null);
   const fileInputRef = useRef(null);
 
   useEffect(() => {
@@ -53,13 +56,29 @@ export default function Roster() {
     }
   }
 
+  async function handleReset() {
+    const result = await api.resetAllApplicants();
+    setResetResult(result);
+    setShowResetConfirm(false);
+    await load();
+  }
+
   return (
     <div className="page">
       <div className="section-header">
         <span className="field-label" style={{ marginBottom: 0 }}>Roster — all applicants</span>
-        <button className="btn btn-outline btn-sm" onClick={() => fileInputRef.current?.click()} disabled={importing}>
-          {importing ? "Importing…" : "Import CSV"}
-        </button>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button className="btn btn-outline btn-sm" onClick={() => fileInputRef.current?.click()} disabled={importing}>
+            {importing ? "Importing…" : "Import CSV"}
+          </button>
+          <button
+            className="btn btn-outline btn-sm"
+            style={{ color: "var(--no)", borderColor: "var(--no)" }}
+            onClick={() => setShowResetConfirm(true)}
+          >
+            Reset for testing
+          </button>
+        </div>
       </div>
       <input
         ref={fileInputRef}
@@ -68,6 +87,24 @@ export default function Roster() {
         style={{ display: "none" }}
         onChange={handleCsvSelected}
       />
+
+      {showResetConfirm && (
+        <PasswordConfirm
+          title="Reset all audition data?"
+          message="This clears every check-in, casting decision, pool assignment, measurement, and photo for ALL applicants. Their names, emails, agencies, and addresses stay intact. This cannot be undone."
+          confirmLabel="Reset everything"
+          onConfirm={handleReset}
+          onCancel={() => setShowResetConfirm(false)}
+        />
+      )}
+
+      {resetResult && (
+        <div className="card" style={{ marginBottom: 16, background: "var(--yes-bg)", borderColor: "var(--yes)" }}>
+          <p style={{ margin: 0, fontWeight: 600, color: "var(--yes)" }}>
+            Reset complete — {resetResult.reset_count} applicant{resetResult.reset_count === 1 ? "" : "s"} back to a clean state.
+          </p>
+        </div>
+      )}
 
       {importResult && (
         <div className="card" style={{ marginBottom: 16, background: importResult.error ? "var(--no-bg)" : "var(--yes-bg)", borderColor: importResult.error ? "var(--no)" : "var(--yes)" }}>

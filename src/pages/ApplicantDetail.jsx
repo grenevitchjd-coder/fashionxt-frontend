@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { api } from "../api.js";
 import { PoolBadge, AuditionTag } from "../components/Badges.jsx";
+import PasswordConfirm from "../components/PasswordConfirm.jsx";
 
 const STATUS_OPTIONS = [
   { key: "yes", label: "Yes", cls: "active-yes" },
@@ -23,6 +24,7 @@ const EMPTY_CONTACT = {
 
 export default function ApplicantDetail() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [applicant, setApplicant] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -30,6 +32,7 @@ export default function ApplicantDetail() {
   const [hasAgency, setHasAgency] = useState(false);
   const [contactSaving, setContactSaving] = useState(false);
   const [contactSaved, setContactSaved] = useState(false);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
 
   useEffect(() => {
     load();
@@ -111,6 +114,12 @@ export default function ApplicantDetail() {
     } finally {
       setSaving(false);
     }
+  }
+
+  async function handleReset() {
+    await api.resetApplicant(id);
+    setShowResetConfirm(false);
+    await load();
   }
 
   if (loading) return <div className="page"><p style={{ color: "var(--muted)" }}>Loading…</p></div>;
@@ -298,6 +307,29 @@ export default function ApplicantDetail() {
           <p style={{ color: "var(--muted)", fontSize: 14 }}>No photos yet.</p>
         )}
       </div>
+
+      <div className="field">
+        <button
+          className="btn btn-outline btn-sm"
+          style={{ color: "var(--no)", borderColor: "var(--no)" }}
+          onClick={() => setShowResetConfirm(true)}
+        >
+          Remove casting information (reset for testing)
+        </button>
+        <p style={{ color: "var(--muted)", fontSize: 12, marginTop: 6 }}>
+          Clears check-in, casting decision, pool, measurements, and photos. Keeps name, email, agency, and address.
+        </p>
+      </div>
+
+      {showResetConfirm && (
+        <PasswordConfirm
+          title={`Reset ${applicant.full_name}?`}
+          message="This clears their check-in, casting decision, pool assignment, measurements, and photos. Their contact and agency info stay intact. This cannot be undone."
+          confirmLabel="Reset this applicant"
+          onConfirm={handleReset}
+          onCancel={() => setShowResetConfirm(false)}
+        />
+      )}
     </div>
   );
 }

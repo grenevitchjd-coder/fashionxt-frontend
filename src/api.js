@@ -43,6 +43,10 @@ export const api = {
 
   getDirectory: () => request(`/applicants/directory`),
 
+  resetApplicant: (applicantId) => request(`/applicants/${applicantId}/reset`, { method: "POST" }),
+
+  resetAllApplicants: () => request(`/applicants/reset-all`, { method: "POST" }),
+
   updateContactInfo: (applicantId, payload) =>
     request(`/applicants/${applicantId}/contact-info`, { method: "PUT", body: JSON.stringify(payload) }),
 
