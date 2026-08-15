@@ -234,6 +234,12 @@ input, select, textarea {
   font-size: 14px;
 }
 
+.btn-status-sm {
+  padding: 6px 10px;
+  font-size: 13px;
+  flex: none;
+  min-width: 56px;
+}
 .btn-status.active-yes { background: var(--yes); border-color: var(--yes); color: #fff; }
 .btn-status.active-maybe { background: var(--maybe); border-color: var(--maybe); color: #fff; }
 .btn-status.active-no { background: var(--no); border-color: var(--no); color: #fff; }
