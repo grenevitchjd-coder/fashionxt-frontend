@@ -9,6 +9,7 @@ export default function Topbar() {
       <div className="topbar-title">FashioNXT Casting</div>
       <div className="topbar-nav">
         <NavLink to="/" end>Roster</NavLink>
+        <NavLink to="/checkin">Check-in</NavLink>
         <NavLink to="/add">Add guest</NavLink>
         <NavLink to="/decks">Decks</NavLink>
       </div>

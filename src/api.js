@@ -19,6 +19,11 @@ export const api = {
 
   getRoster: (eventId) => request(`/applicants/roster?event_id=${eventId}`),
 
+  getCheckinList: () => request(`/applicants/checkin-list`),
+
+  checkinApplicant: (applicantId, payload) =>
+    request(`/applicants/${applicantId}/checkin`, { method: "PUT", body: JSON.stringify(payload) }),
+
   getApplicantDetail: (applicantId) => request(`/applicants/${applicantId}/detail`),
 
   addManualApplicant: (payload) =>

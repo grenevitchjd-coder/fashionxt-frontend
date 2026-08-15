@@ -2,6 +2,7 @@ import { Routes, Route } from "react-router-dom";
 import { EventProvider } from "./components/EventContext.jsx";
 import Topbar from "./components/Topbar.jsx";
 import Roster from "./pages/Roster.jsx";
+import CheckIn from "./pages/CheckIn.jsx";
 import ApplicantDetail from "./pages/ApplicantDetail.jsx";
 import PhotoCapture from "./pages/PhotoCapture.jsx";
 import ManualAdd from "./pages/ManualAdd.jsx";
@@ -27,6 +28,7 @@ export default function App() {
 
         {/* Staff-facing screens */}
         <Route path="/" element={<StaffLayout><Roster /></StaffLayout>} />
+        <Route path="/checkin" element={<StaffLayout><CheckIn /></StaffLayout>} />
         <Route path="/applicant/:id" element={<StaffLayout><ApplicantDetail /></StaffLayout>} />
         <Route path="/photo/:id" element={<StaffLayout><PhotoCapture /></StaffLayout>} />
         <Route path="/add" element={<StaffLayout><ManualAdd /></StaffLayout>} />
