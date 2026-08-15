@@ -13,6 +13,7 @@ export default function Topbar() {
         <NavLink to="/" end>Roster</NavLink>
         <NavLink to="/pools">Model Pools</NavLink>
         <NavLink to="/designers">Designers</NavLink>
+        <NavLink to="/final-roster">Final Roster</NavLink>
         <NavLink to="/decks">Decks</NavLink>
         <NavLink to="/add">Add guest</NavLink>
         <span style={{ width: 1, background: "rgba(255,255,255,0.15)", margin: "0 2px" }} />
