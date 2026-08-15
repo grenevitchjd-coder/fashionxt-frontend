@@ -3,6 +3,10 @@ import { useState } from "react";
 const PASSWORD = "Fash10nxt";
 const UNLOCK_KEY = "fx_unlocked";
 
+// Toggle in Vercel: set VITE_REQUIRE_PASSWORD to "false" to disable the
+// gate entirely (redeploy to apply), or leave unset/"true" to require it.
+const REQUIRE_PASSWORD = import.meta.env.VITE_REQUIRE_PASSWORD !== "false";
+
 function isUnlocked() {
   return sessionStorage.getItem(UNLOCK_KEY) === "true";
 }
@@ -11,7 +15,7 @@ function isUnlocked() {
 // password prompt in place of the page content until unlocked for this
 // browser session — protects direct/bookmarked links too, not just clicks.
 export default function RequireAuth({ children }) {
-  const [unlocked, setUnlocked] = useState(isUnlocked());
+  const [unlocked, setUnlocked] = useState(!REQUIRE_PASSWORD || isUnlocked());
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
