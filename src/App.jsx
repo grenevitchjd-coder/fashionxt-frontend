@@ -3,6 +3,7 @@ import { EventProvider } from "./components/EventContext.jsx";
 import Topbar from "./components/Topbar.jsx";
 import RequireAuth from "./components/RequireAuth.jsx";
 import Placeholder from "./pages/Placeholder.jsx";
+import AuditionCity from "./pages/AuditionCity.jsx";
 import ModelPools from "./pages/ModelPools.jsx";
 import AddPoolGuest from "./pages/AddPoolGuest.jsx";
 import Roster from "./pages/Roster.jsx";
@@ -50,8 +51,8 @@ export default function App() {
         <Route path="/measurements/:id" element={<StaffLayout><MeasurementEntry /></StaffLayout>} />
         <Route path="/applicant/:id" element={<StaffLayout><ApplicantDetail /></StaffLayout>} />
         <Route path="/photo/:id" element={<StaffLayout><PhotoCapture /></StaffLayout>} />
-        <Route path="/audition/portland" element={<StaffLayout><Placeholder title="Portland Auditions" /></StaffLayout>} />
-        <Route path="/audition/seattle" element={<StaffLayout><Placeholder title="Seattle Auditions" /></StaffLayout>} />
+        <Route path="/audition/portland" element={<StaffLayout><AuditionCity city="Portland" /></StaffLayout>} />
+        <Route path="/audition/seattle" element={<StaffLayout><AuditionCity city="Seattle" /></StaffLayout>} />
       </Routes>
     </EventProvider>
   );

@@ -126,7 +126,15 @@ function CheckInRow({ person, eventId, takenNumbers, onAssigned }) {
       await api.checkinApplicant(person.id, { event_id: Number(eventId), audition_number: numVal });
       onAssigned(numVal);
     } catch (err) {
-      setError("Number already taken — try another");
+      let msg = "Couldn't assign that number.";
+      try {
+        const match = err.message.match(/:\s*(\{.*\})$/s);
+        if (match) {
+          const parsed = JSON.parse(match[1]);
+          if (parsed.detail) msg = parsed.detail;
+        }
+      } catch {}
+      setError(msg);
     } finally {
       setSaving(false);
     }

@@ -30,6 +30,8 @@ export const api = {
 
   getMeasurementsList: (eventId) => request(`/applicants/measurements-list?event_id=${eventId}`),
 
+  getEvents: () => request(`/events`),
+
   getMeasurement: (applicantId) => request(`/applicants/${applicantId}/measurement`),
 
   saveMeasurement: (applicantId, payload) =>
