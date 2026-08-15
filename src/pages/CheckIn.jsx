@@ -81,7 +81,7 @@ export default function CheckIn() {
           </div>
           <div style={{ fontSize: 15, marginTop: 6 }}>{justCheckedIn.full_name}</div>
           {justCheckedIn.preselect && (
-            <div style={{ fontSize: 12, color: "var(--maybe)", fontWeight: 700, marginTop: 4 }}>PRESELECT — auto-marked Yes</div>
+            <div style={{ fontSize: 12, color: "var(--maybe)", fontWeight: 700, marginTop: 4 }}>FAST TRACK — auto-marked Yes</div>
           )}
           <button className="btn btn-brass" style={{ marginTop: 14 }} onClick={handleNext}>
             Next person
@@ -153,11 +153,11 @@ function CheckInRow({ person, eventId, onAssigned }) {
     return (
       <div className="card">
         <div className="card-row">
-          <AuditionTag number={person.audition_number} />
+          <AuditionTag number={person.audition_number} fastTrack={person.preselect} />
           <div className="card-main">
             <div className="card-name">{person.full_name}</div>
             <div className="card-meta">
-              Checked in{person.preselect ? " · preselect" : ""}
+              Checked in{person.preselect ? " · Fast Track" : ""}
             </div>
           </div>
         </div>
@@ -177,7 +177,7 @@ function CheckInRow({ person, eventId, onAssigned }) {
         </div>
         <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, flexShrink: 0, whiteSpace: "nowrap" }}>
           <input type="checkbox" checked={preselect} onChange={(e) => setPreselect(e.target.checked)} />
-          Preselect
+          Fast Track
         </label>
         <button
           className="btn btn-brass btn-sm"

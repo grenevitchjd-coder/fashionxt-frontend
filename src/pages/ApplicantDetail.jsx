@@ -128,7 +128,7 @@ export default function ApplicantDetail() {
   return (
     <div className="page">
       <div className="card-row" style={{ marginBottom: 20 }}>
-        <AuditionTag number={applicant.audition_number} large />
+        <AuditionTag number={applicant.audition_number} large fastTrack={applicant.preselect} />
         <div>
           <h1 style={{ fontSize: 22 }}>{applicant.full_name}</h1>
           <div className="card-meta">
@@ -140,7 +140,7 @@ export default function ApplicantDetail() {
 
       {applicant.preselect && (
         <div className="card" style={{ background: "var(--maybe-bg)", borderColor: "var(--maybe)", marginBottom: 16 }}>
-          <strong style={{ color: "var(--maybe)", fontSize: 13 }}>PRESELECT — measurements only, not judged</strong>
+          <strong style={{ color: "var(--maybe)", fontSize: 13 }}>FAST TRACK — measurements only, not judged</strong>
         </div>
       )}
 
@@ -254,7 +254,7 @@ export default function ApplicantDetail() {
           onClick={togglePreselect}
           disabled={saving}
         >
-          {applicant.preselect ? "Remove preselect flag" : "Mark as preselect"}
+          {applicant.preselect ? "Remove Fast Track flag" : "Mark as Fast Track"}
         </button>
       </div>
 

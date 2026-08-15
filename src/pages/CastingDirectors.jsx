@@ -119,7 +119,7 @@ function JudgeRow({ person, onDecided }) {
   return (
     <div className="card" style={{ padding: "10px 14px" }}>
       <div className="card-row" style={{ gap: 12 }}>
-        <AuditionTag number={person.audition_number} />
+        <AuditionTag number={person.audition_number} fastTrack={person.preselect} />
         <div className="card-main">
           <div className="card-name" style={{ fontSize: 15 }}>{person.full_name}</div>
           <div className="card-meta">
@@ -129,7 +129,7 @@ function JudgeRow({ person, onDecided }) {
           </div>
           {person.preselect && (
             <div style={{ color: "var(--maybe)", fontSize: 11, fontWeight: 600, marginTop: 2 }}>
-              PRESELECT — not judged
+              FAST TRACK — not judged
             </div>
           )}
         </div>
