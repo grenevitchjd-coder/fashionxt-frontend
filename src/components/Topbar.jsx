@@ -6,9 +6,11 @@ export default function Topbar() {
 
   return (
     <div className="topbar">
-      <div className="topbar-title">FashioNXT Casting</div>
+      <NavLink to="/" className="topbar-title" style={{ textDecoration: "none" }}>
+        FashioNXT Casting
+      </NavLink>
       <div className="topbar-nav">
-        <NavLink to="/" end>Roster</NavLink>
+        <NavLink to="/roster">Roster</NavLink>
         <NavLink to="/checkin">Check-in</NavLink>
         <NavLink to="/add">Add guest</NavLink>
         <NavLink to="/decks">Decks</NavLink>
