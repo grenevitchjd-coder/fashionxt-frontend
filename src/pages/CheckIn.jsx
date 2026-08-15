@@ -9,6 +9,7 @@ export default function CheckIn() {
   const [allApplicants, setAllApplicants] = useState([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
+  const [justCheckedIn, setJustCheckedIn] = useState(null); // the person object right after check-in
   const searchRef = useRef(null);
 
   useEffect(() => {
@@ -37,14 +38,21 @@ export default function CheckIn() {
       .slice(0, 25);
   }, [query, allApplicants]);
 
-  function handleAssigned(applicantId, updated) {
+  function handleAssigned(applicant, updated) {
     setAllApplicants((prev) =>
       prev.map((a) =>
-        a.id === applicantId
+        a.id === applicant.id
           ? { ...a, event_id: Number(eventId), audition_number: updated.audition_number, preselect: updated.preselect }
           : a
       )
     );
+    setJustCheckedIn({ full_name: applicant.full_name, audition_number: updated.audition_number, preselect: updated.preselect });
+  }
+
+  function handleNext() {
+    setJustCheckedIn(null);
+    setQuery("");
+    searchRef.current?.focus();
   }
 
   if (!eventId) {
@@ -65,35 +73,51 @@ export default function CheckIn() {
         {loading ? "Loading applicant list…" : `${allApplicants.length} applicants loaded — search is instant. Numbers assign automatically in check-in order.`}
       </p>
 
-      <input
-        ref={searchRef}
-        className="search-input"
-        style={{ width: "100%", marginBottom: 12 }}
-        placeholder="Search name or phone…"
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        autoFocus
-      />
-
-      {query.trim() && results.length === 0 && (
-        <div className="empty-state">
-          <h3>No match found</h3>
-          <p>They may not have applied online. <Link to="/add" style={{ color: "var(--brass)" }}>Add them as a guest</Link> instead.</p>
+      {justCheckedIn && (
+        <div className="card" style={{ marginBottom: 16, background: "var(--yes-bg)", borderColor: "var(--yes)", textAlign: "center", padding: "20px 16px" }}>
+          <div style={{ fontSize: 13, color: "var(--yes)", fontWeight: 700, marginBottom: 4 }}>CHECKED IN</div>
+          <div style={{ fontSize: 40, fontWeight: 800, fontFamily: "var(--font-display)", lineHeight: 1 }}>
+            #{String(justCheckedIn.audition_number).padStart(3, "0")}
+          </div>
+          <div style={{ fontSize: 15, marginTop: 6 }}>{justCheckedIn.full_name}</div>
+          {justCheckedIn.preselect && (
+            <div style={{ fontSize: 12, color: "var(--maybe)", fontWeight: 700, marginTop: 4 }}>PRESELECT — auto-marked Yes</div>
+          )}
+          <button className="btn btn-brass" style={{ marginTop: 14 }} onClick={handleNext}>
+            Next person
+          </button>
         </div>
       )}
 
-      {results.map((person) => (
-        <CheckInRow
-          key={person.id}
-          person={person}
-          eventId={eventId}
-          onAssigned={(updated) => {
-            handleAssigned(person.id, updated);
-            setQuery("");
-            searchRef.current?.focus();
-          }}
-        />
-      ))}
+      {!justCheckedIn && (
+        <>
+          <input
+            ref={searchRef}
+            className="search-input"
+            style={{ width: "100%", marginBottom: 12 }}
+            placeholder="Search name or phone…"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            autoFocus
+          />
+
+          {query.trim() && results.length === 0 && (
+            <div className="empty-state">
+              <h3>No match found</h3>
+              <p>They may not have applied online. <Link to="/add" style={{ color: "var(--brass)" }}>Add them as a guest</Link> instead.</p>
+            </div>
+          )}
+
+          {results.map((person) => (
+            <CheckInRow
+              key={person.id}
+              person={person}
+              eventId={eventId}
+              onAssigned={(updated) => handleAssigned(person, updated)}
+            />
+          ))}
+        </>
+      )}
     </div>
   );
 }
