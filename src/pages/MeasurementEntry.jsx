@@ -22,6 +22,7 @@ const YES_NO_FIELDS = [
   { key: "swim_ok", label: "Swim OK" },
   { key: "lingerie_ok", label: "Lingerie OK" },
   { key: "see_through_ok", label: "See-Through OK" },
+  { key: "is_minor", label: "Minor" },
 ];
 
 const DAY_FIELDS = [
@@ -35,7 +36,7 @@ const EMPTY_FORM = {
   bust_chest: "", hip_size: "", waist_size: "", arm_length: "", inseam: "",
   shoe_size: "", dress_size: "", jacket_size: "",
   avail_thursday: false, avail_friday: false, avail_saturday: false,
-  swim_ok: null, lingerie_ok: null, see_through_ok: null, notes: "",
+  swim_ok: null, lingerie_ok: null, see_through_ok: null, notes: "", is_minor: null,
 };
 
 export default function MeasurementEntry() {
@@ -87,7 +88,7 @@ export default function MeasurementEntry() {
   if (!applicant) return <div className="page"><p>Not found.</p></div>;
 
   return (
-    <div className="page">
+    <div className="page" style={{ maxWidth: 760 }}>
       <Link to="/measurements" style={{ fontSize: 13, color: "var(--muted)" }}>← Back to Measurements</Link>
       <h1 style={{ fontSize: 20, margin: "8px 0 2px" }}>{applicant.full_name}</h1>
       <p style={{ color: "var(--muted)", fontSize: 14, marginBottom: 20 }}>
@@ -96,7 +97,7 @@ export default function MeasurementEntry() {
 
       <form onSubmit={handleSave}>
         <span className="field-label">Physical details</span>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 20 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8, marginBottom: 20 }}>
           {TEXT_FIELDS.map((f) => (
             <div key={f.key}>
               <label
@@ -117,6 +118,7 @@ export default function MeasurementEntry() {
               />
             </div>
           ))}
+        </div>
 
         <span className="field-label">Notes</span>
         <textarea
