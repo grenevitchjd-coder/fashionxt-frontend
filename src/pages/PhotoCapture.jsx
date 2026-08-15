@@ -40,7 +40,10 @@ export default function PhotoCapture() {
   }
 
   function countForPrefix(prefix) {
-    return applicant.photos.filter((p) => p.tag && p.tag.startsWith(prefix + "_")).length;
+    const uniqueTags = new Set(
+      applicant.photos.filter((p) => p.tag && p.tag.startsWith(prefix + "_")).map((p) => p.tag)
+    );
+    return uniqueTags.size;
   }
 
   function openCamera(tag) {
