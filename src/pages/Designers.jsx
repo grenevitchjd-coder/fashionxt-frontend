@@ -70,6 +70,11 @@ export default function Designers() {
     await loadDesigners();
   }
 
+  async function handleMoveDay(designerId, showDayId) {
+    await api.moveDesigner(designerId, Number(showDayId));
+    await loadDesigners();
+  }
+
   const dayObj = showDays.find((d) => d.id === selectedDay);
 
   return (
@@ -131,18 +136,21 @@ export default function Designers() {
           designer={d}
           index={i}
           total={designers.length}
+          showDays={showDays}
+          currentDayId={selectedDay}
           expanded={expandedId === d.id}
           onToggle={() => setExpandedId(expandedId === d.id ? null : d.id)}
           onMove={handleMove}
           onRemove={handleRemove}
           onRemoveAssignment={handleRemoveAssignment}
+          onMoveDay={handleMoveDay}
         />
       ))}
     </div>
   );
 }
 
-function DesignerRow({ designer, index, total, expanded, onToggle, onMove, onRemove, onRemoveAssignment }) {
+function DesignerRow({ designer, index, total, showDays, currentDayId, expanded, onToggle, onMove, onRemove, onRemoveAssignment, onMoveDay }) {
   return (
     <div className="card" style={{ marginBottom: 8 }}>
       <div className="card-row">
@@ -183,6 +191,16 @@ function DesignerRow({ designer, index, total, expanded, onToggle, onMove, onRem
         <button className="btn btn-outline btn-sm" onClick={onToggle}>
           {expanded ? "Hide models" : "View models"}
         </button>
+        <select
+          value=""
+          onChange={(e) => { if (e.target.value) onMoveDay(designer.id, e.target.value); }}
+          style={{ fontSize: 12, padding: "6px 8px", borderRadius: 6, border: "1.5px solid var(--line-strong)", color: "var(--muted)" }}
+        >
+          <option value="">Move to…</option>
+          {showDays.filter((d) => d.id !== currentDayId).map((d) => (
+            <option key={d.id} value={d.id}>{d.name}</option>
+          ))}
+        </select>
         <button
           className="btn btn-outline btn-sm"
           style={{ color: "var(--no)", borderColor: "var(--no)" }}

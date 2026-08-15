@@ -49,6 +49,9 @@ export const api = {
 
   removeDesigner: (designerId) => request(`/designers/${designerId}`, { method: "DELETE" }),
 
+  moveDesigner: (designerId, showDayId) =>
+    request(`/designers/${designerId}/move`, { method: "PUT", body: JSON.stringify({ show_day_id: showDayId }) }),
+
   reorderDesigners: (orderedIds) =>
     request(`/designers/reorder`, { method: "PUT", body: JSON.stringify({ ordered_ids: orderedIds }) }),
 
