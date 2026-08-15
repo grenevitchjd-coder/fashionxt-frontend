@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useParams, useNavigate, Link, useSearchParams } from "react-router-dom";
 import { api } from "../api.js";
 
 const REQUIRED_SLOTS = [
@@ -12,6 +12,8 @@ const REQUIRED_SLOTS = [
 export default function PhotoCapture() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const goToMeasurements = searchParams.get("next") === "measurements";
   const [applicant, setApplicant] = useState(null);
   const [loading, setLoading] = useState(true);
   const [uploadingTag, setUploadingTag] = useState(null);
@@ -73,10 +75,13 @@ export default function PhotoCapture() {
 
   return (
     <div className="page">
-      <Link to={`/photo-station`} style={{ fontSize: 13, color: "var(--muted)" }}>← Back to Photo Station</Link>
+      <Link to={goToMeasurements ? "/pools" : "/photo-station"} style={{ fontSize: 13, color: "var(--muted)" }}>
+        ← Back to {goToMeasurements ? "Model Pools" : "Photo Station"}
+      </Link>
       <h1 style={{ fontSize: 20, margin: "8px 0 2px" }}>{applicant.full_name}</h1>
       <p style={{ color: "var(--muted)", fontSize: 14, marginBottom: 20 }}>
-        #{String(applicant.audition_number).padStart(3, "0")} · {applicant.category.replace("_", "-")}
+        {applicant.audition_number ? `#${String(applicant.audition_number).padStart(3, "0")} · ` : ""}
+        {applicant.category.replace("_", "-")}
       </p>
 
       <span className="field-label">Required shots — tap any photo to retake it</span>
@@ -153,8 +158,12 @@ export default function PhotoCapture() {
         onChange={handleFileChange}
       />
 
-      <button className="btn btn-primary btn-block" style={{ marginTop: 24 }} onClick={() => navigate("/photo-station")}>
-        Done — back to queue
+      <button
+        className="btn btn-primary btn-block"
+        style={{ marginTop: 24 }}
+        onClick={() => navigate(goToMeasurements ? `/measurements/${id}?from=pools` : "/photo-station")}
+      >
+        {goToMeasurements ? "Continue to measurements →" : "Done — back to queue"}
       </button>
     </div>
   );

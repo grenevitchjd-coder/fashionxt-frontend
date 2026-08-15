@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useParams, useNavigate, Link, useSearchParams } from "react-router-dom";
 import { api } from "../api.js";
 
 const TEXT_FIELDS = [
@@ -42,6 +42,8 @@ const EMPTY_FORM = {
 export default function MeasurementEntry() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const fromPools = searchParams.get("from") === "pools";
   const [applicant, setApplicant] = useState(null);
   const [form, setForm] = useState(EMPTY_FORM);
   const [loading, setLoading] = useState(true);
@@ -89,10 +91,13 @@ export default function MeasurementEntry() {
 
   return (
     <div className="page" style={{ maxWidth: 760 }}>
-      <Link to="/measurements" style={{ fontSize: 13, color: "var(--muted)" }}>← Back to Measurements</Link>
+      <Link to={fromPools ? "/pools" : "/measurements"} style={{ fontSize: 13, color: "var(--muted)" }}>
+        ← Back to {fromPools ? "Model Pools" : "Measurements"}
+      </Link>
       <h1 style={{ fontSize: 20, margin: "8px 0 2px" }}>{applicant.full_name}</h1>
       <p style={{ color: "var(--muted)", fontSize: 14, marginBottom: 20 }}>
-        #{String(applicant.audition_number).padStart(3, "0")} · {applicant.category.replace("_", "-")}
+        {applicant.audition_number ? `#${String(applicant.audition_number).padStart(3, "0")} · ` : ""}
+        {applicant.category.replace("_", "-")}
       </p>
 
       <form onSubmit={handleSave}>
@@ -155,8 +160,8 @@ export default function MeasurementEntry() {
           <button type="submit" className="btn btn-brass" style={{ flex: 1 }} disabled={saving}>
             {saving ? "Saving…" : "Save"}
           </button>
-          <button type="button" className="btn btn-primary" style={{ flex: 1 }} onClick={() => navigate("/measurements")}>
-            Done — next model
+          <button type="button" className="btn btn-primary" style={{ flex: 1 }} onClick={() => navigate(fromPools ? "/pools" : "/measurements")}>
+            {fromPools ? "Done — back to Model Pools" : "Done — next model"}
           </button>
         </div>
       </form>

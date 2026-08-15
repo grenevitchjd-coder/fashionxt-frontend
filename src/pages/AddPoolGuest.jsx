@@ -8,6 +8,7 @@ export default function AddPoolGuest() {
     full_name: "", email: "", phone: "", category: "female",
     agency_name: "", agency_address: "",
   });
+  const [hasAgency, setHasAgency] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -20,10 +21,15 @@ export default function AddPoolGuest() {
     setSaving(true);
     setError("");
     try {
-      const result = await api.createPoolGuest(form);
-      // Straight into the existing photo-capture screen for this new guest —
-      // reuses the same slot UI, no need to rebuild that logic here.
-      navigate(`/photo/${result.id}`);
+      const payload = {
+        ...form,
+        agency_name: hasAgency ? form.agency_name : "N/A",
+        agency_address: hasAgency ? form.agency_address : "",
+      };
+      const result = await api.createPoolGuest(payload);
+      // Straight into the existing photo-capture screen, then on to
+      // measurements — reuses both existing screens, no rebuild needed.
+      navigate(`/photo/${result.id}?next=measurements`);
     } catch (err) {
       setError("Couldn't add this model — check the email isn't already in use.");
     } finally {
@@ -37,7 +43,7 @@ export default function AddPoolGuest() {
       <h1 style={{ fontSize: 20, margin: "8px 0 4px" }}>Add model to pools</h1>
       <p style={{ color: "var(--muted)", fontSize: 14, marginBottom: 20 }}>
         For designer requests or late additions — skips audition day, marked Yes automatically.
-        After saving, you'll go straight to photos, then measurements.
+        After saving, you'll go to photos, then measurements.
       </p>
 
       <form onSubmit={handleSubmit}>
@@ -61,14 +67,24 @@ export default function AddPoolGuest() {
             <option value="non_binary">Non-binary</option>
           </select>
         </div>
-        <div className="field">
-          <span className="field-label">Agency name (if signed)</span>
-          <input value={form.agency_name} onChange={(e) => update("agency_name", e.target.value)} placeholder="N/A if not signed" />
-        </div>
-        <div className="field">
-          <span className="field-label">Agency address</span>
-          <input value={form.agency_address} onChange={(e) => update("agency_address", e.target.value)} />
-        </div>
+
+        <label style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16, fontSize: 14 }}>
+          <input type="checkbox" checked={hasAgency} onChange={(e) => setHasAgency(e.target.checked)} />
+          Signed with an agency
+        </label>
+
+        {hasAgency && (
+          <>
+            <div className="field">
+              <span className="field-label">Agency name</span>
+              <input value={form.agency_name} onChange={(e) => update("agency_name", e.target.value)} />
+            </div>
+            <div className="field">
+              <span className="field-label">Agency address</span>
+              <input value={form.agency_address} onChange={(e) => update("agency_address", e.target.value)} />
+            </div>
+          </>
+        )}
 
         {error && <p style={{ color: "var(--no)", fontSize: 14 }}>{error}</p>}
 

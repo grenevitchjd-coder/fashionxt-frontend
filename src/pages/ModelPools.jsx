@@ -25,7 +25,8 @@ export default function ModelPools() {
   const [category, setCategory] = useState("female");
   const [filterHeight, setFilterHeight] = useState("");
   const [filterWaist, setFilterWaist] = useState("");
-  const [filterSize, setFilterSize] = useState("");
+  const [filterDressSize, setFilterDressSize] = useState("");
+  const [filterJacketSize, setFilterJacketSize] = useState("");
   const [detailId, setDetailId] = useState(null);
 
   useEffect(() => {
@@ -46,26 +47,25 @@ export default function ModelPools() {
 
   const heightOptions = useMemo(() => distinctValues(byCategory, "height"), [byCategory]);
   const waistOptions = useMemo(() => distinctValues(byCategory, "waist_size"), [byCategory]);
-  const sizeOptions = useMemo(() => {
-    if (category === "male") return distinctValues(byCategory, "jacket_size");
-    if (category === "female") return distinctValues(byCategory, "dress_size");
-    return [...new Set([...distinctValues(byCategory, "dress_size"), ...distinctValues(byCategory, "jacket_size")])].sort();
-  }, [byCategory, category]);
+  const dressOptions = useMemo(() => distinctValues(byCategory, "dress_size"), [byCategory]);
+  const jacketOptions = useMemo(() => distinctValues(byCategory, "jacket_size"), [byCategory]);
 
   const filtered = useMemo(() => {
     return byCategory.filter((a) => {
       const m = a.measurement || {};
       if (filterHeight && m.height !== filterHeight) return false;
       if (filterWaist && m.waist_size !== filterWaist) return false;
-      if (filterSize && m.dress_size !== filterSize && m.jacket_size !== filterSize) return false;
+      if (filterDressSize && m.dress_size !== filterDressSize) return false;
+      if (filterJacketSize && m.jacket_size !== filterJacketSize) return false;
       return true;
     });
-  }, [byCategory, filterHeight, filterWaist, filterSize]);
+  }, [byCategory, filterHeight, filterWaist, filterDressSize, filterJacketSize]);
 
   function clearFilters() {
     setFilterHeight("");
     setFilterWaist("");
-    setFilterSize("");
+    setFilterDressSize("");
+    setFilterJacketSize("");
   }
 
   function handlePoolChange(applicantId, pool) {
@@ -78,8 +78,12 @@ export default function ModelPools() {
     return c;
   }, [all]);
 
+  const showDressFilter = category === "female" || category === "non_binary";
+  const showJacketFilter = category === "male" || category === "non_binary";
+  const anyFilterActive = filterHeight || filterWaist || filterDressSize || filterJacketSize;
+
   return (
-    <div className="page" style={{ maxWidth: 1200 }}>
+    <div className="page" style={{ maxWidth: 1300 }}>
       <div className="section-header">
         <h1 style={{ fontSize: 20 }}>Model Pools</h1>
         <div style={{ display: "flex", gap: 8 }}>
@@ -113,13 +117,13 @@ export default function ModelPools() {
       <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap", alignItems: "center" }}>
         <FilterSelect label="Height" value={filterHeight} onChange={setFilterHeight} options={heightOptions} />
         <FilterSelect label="Waist" value={filterWaist} onChange={setFilterWaist} options={waistOptions} />
-        <FilterSelect
-          label={category === "male" ? "Jacket size" : category === "female" ? "Dress size" : "Dress/Jacket size"}
-          value={filterSize}
-          onChange={setFilterSize}
-          options={sizeOptions}
-        />
-        {(filterHeight || filterWaist || filterSize) && (
+        {showDressFilter && (
+          <FilterSelect label="Dress size" value={filterDressSize} onChange={setFilterDressSize} options={dressOptions} />
+        )}
+        {showJacketFilter && (
+          <FilterSelect label="Jacket size" value={filterJacketSize} onChange={setFilterJacketSize} options={jacketOptions} />
+        )}
+        {anyFilterActive && (
           <button className="btn btn-outline btn-sm" onClick={clearFilters}>Clear filters</button>
         )}
       </div>
@@ -131,7 +135,7 @@ export default function ModelPools() {
         </div>
       )}
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: 10 }}>
         {filtered.map((person) => (
           <ModelCard
             key={person.id}
@@ -153,7 +157,7 @@ function FilterSelect({ label, value, onChange, options }) {
     <select
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      style={{ padding: "7px 10px", borderRadius: 8, border: "1.5px solid var(--line-strong)", fontSize: 13, background: "var(--paper)" }}
+      style={{ padding: "6px 8px", borderRadius: 6, border: "1.5px solid var(--line-strong)", fontSize: 12, background: "var(--paper)" }}
     >
       <option value="">{label}: All</option>
       {options.map((opt) => (
@@ -163,18 +167,12 @@ function FilterSelect({ label, value, onChange, options }) {
   );
 }
 
-function YesNoPill({ label, value }) {
-  if (value === null || value === undefined) return null;
+function Stat({ label, value }) {
   return (
-    <span
-      style={{
-        fontSize: 9, fontWeight: 700, padding: "2px 5px", borderRadius: 4,
-        background: value ? "var(--yes-bg)" : "var(--line)",
-        color: value ? "var(--yes)" : "var(--muted)",
-      }}
-    >
-      {label} {value ? "Y" : "N"}
-    </span>
+    <div style={{ fontSize: 10 }}>
+      <span style={{ color: "var(--muted)" }}>{label} </span>
+      <span style={{ fontWeight: 700, color: "var(--ink)" }}>{value || "—"}</span>
+    </div>
   );
 }
 
@@ -193,65 +191,47 @@ function ModelCard({ person, category, onPoolChange, onViewDetails }) {
     }
   }
 
-  const sizeLine =
-    category === "male" ? (m.jacket_size ? `Jacket ${m.jacket_size}` : "") :
-    category === "female" ? (m.dress_size ? `Dress ${m.dress_size}` : "") :
-    [m.dress_size && `Dress ${m.dress_size}`, m.jacket_size && `Jacket ${m.jacket_size}`].filter(Boolean).join(" · ");
-
-  const days = [
-    m.avail_thursday && "Th",
-    m.avail_friday && "F",
-    m.avail_saturday && "Sa",
-  ].filter(Boolean).join(" ");
-
   return (
     <div className="card" style={{ padding: 0, overflow: "hidden" }}>
-      <div style={{ position: "relative", aspectRatio: "3/4", background: "var(--line)" }}>
+      <div style={{ position: "relative", height: 70, background: "var(--line)" }}>
         {person.photo_url ? (
           <img src={person.photo_url} alt={person.full_name} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
         ) : (
-          <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--muted)", fontSize: 12 }}>
+          <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--muted)", fontSize: 10 }}>
             No photo
           </div>
         )}
-        <div style={{ position: "absolute", top: 6, left: 6 }}>
+        <div style={{ position: "absolute", top: 4, left: 4 }}>
           <AuditionTag number={person.audition_number} />
         </div>
         {person.preselect && (
-          <div style={{ position: "absolute", top: 6, right: 6, background: "var(--maybe)", color: "#fff", fontSize: 9, fontWeight: 700, padding: "3px 6px", borderRadius: 4 }}>
-            PRESELECT
+          <div style={{ position: "absolute", top: 4, right: 4, background: "var(--maybe)", color: "#fff", fontSize: 8, fontWeight: 700, padding: "2px 4px", borderRadius: 3 }}>
+            PS
           </div>
         )}
       </div>
 
-      <div style={{ padding: 10 }}>
-        <div className="card-name" style={{ fontSize: 14, marginBottom: 4 }}>{person.full_name}</div>
+      <div style={{ padding: 8 }}>
+        <div className="card-name" style={{ fontSize: 12, marginBottom: 4, lineHeight: 1.2 }}>{person.full_name}</div>
 
-        <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 6, lineHeight: 1.5 }}>
-          {m.height && <div>{m.height}{m.bust_chest ? ` · B/C ${m.bust_chest}` : ""}{m.waist_size ? ` · W ${m.waist_size}` : ""}</div>}
-          {sizeLine && <div>{sizeLine}</div>}
-          {days && <div>Avail: {days}</div>}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2, marginBottom: 6 }}>
+          <Stat label="H:" value={m.height} />
+          <Stat label="W:" value={m.waist_size} />
+          {(category === "female" || category === "non_binary") && <Stat label="Dr:" value={m.dress_size} />}
+          {(category === "male" || category === "non_binary") && <Stat label="Jk:" value={m.jacket_size} />}
         </div>
 
-        <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginBottom: 8 }}>
-          <YesNoPill label="Lingerie" value={m.lingerie_ok} />
-          <YesNoPill label="See-thru" value={m.see_through_ok} />
-          <span
-            style={{
-              fontSize: 9, fontWeight: 700, padding: "2px 5px", borderRadius: 4,
-              background: person.has_agency ? "var(--yes-bg)" : "var(--line)",
-              color: person.has_agency ? "var(--yes)" : "var(--muted)",
-            }}
-          >
+        <div style={{ display: "flex", gap: 3, flexWrap: "wrap", marginBottom: 6 }}>
+          <span style={{ fontSize: 8, fontWeight: 700, padding: "1px 4px", borderRadius: 3, background: person.has_agency ? "var(--yes-bg)" : "var(--line)", color: person.has_agency ? "var(--yes)" : "var(--muted)" }}>
             Agency {person.has_agency ? "Y" : "N"}
           </span>
         </div>
 
-        <button className="btn btn-outline btn-sm" style={{ width: "100%", marginBottom: 6, fontSize: 11 }} onClick={onViewDetails}>
-          View full details
+        <button className="btn btn-outline btn-sm" style={{ width: "100%", marginBottom: 5, fontSize: 10, padding: "4px 2px" }} onClick={onViewDetails}>
+          Details
         </button>
 
-        <div style={{ display: "flex", gap: 4 }}>
+        <div style={{ display: "flex", gap: 3 }}>
           {POOL_OPTIONS.map((opt) => (
             <button
               key={opt.key}
@@ -259,10 +239,10 @@ function ModelCard({ person, category, onPoolChange, onViewDetails }) {
               disabled={saving}
               style={{
                 flex: 1,
-                fontSize: 10,
+                fontSize: 9,
                 fontWeight: 700,
-                padding: "5px 2px",
-                borderRadius: 5,
+                padding: "4px 1px",
+                borderRadius: 4,
                 border: "1.5px solid var(--line-strong)",
                 cursor: "pointer",
                 background: person.pool === opt.key ? "var(--ink)" : "var(--paper)",
