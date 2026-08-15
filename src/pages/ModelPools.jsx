@@ -285,7 +285,13 @@ function ModelCard({ person, category, onPoolChange, onViewDetails }) {
     <div className="card" style={{ padding: 0, overflow: "hidden" }}>
       <div style={{ position: "relative", height: 70, background: "var(--line)" }}>
         {person.photo_url ? (
-          <img src={person.photo_url} alt={person.full_name} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+          <img
+            src={person.photo_url}
+            alt={person.full_name}
+            loading="lazy"
+            decoding="async"
+            style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+          />
         ) : (
           <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--muted)", fontSize: 10 }}>
             No photo
@@ -401,7 +407,13 @@ function DetailModal({ applicantId, onClose }) {
               <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 6, marginBottom: 16 }}>
                 {detail.photos.map((p) => (
                   <div key={p.id}>
-                    <img src={p.url} alt={p.tag} style={{ width: "100%", aspectRatio: "3/4", objectFit: "cover", borderRadius: 6 }} />
+                    <img
+                      src={p.url}
+                      alt={p.tag}
+                      loading="lazy"
+                      decoding="async"
+                      style={{ width: "100%", aspectRatio: "3/4", objectFit: "cover", borderRadius: 6 }}
+                    />
                     <div style={{ fontSize: 9, color: "var(--muted)", textAlign: "center", marginTop: 2 }}>{p.tag}</div>
                   </div>
                 ))}
