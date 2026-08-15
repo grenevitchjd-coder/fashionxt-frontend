@@ -19,6 +19,11 @@ export const api = {
 
   getRoster: (eventId) => request(`/applicants/roster?event_id=${eventId}`),
 
+  getPoolsList: () => request(`/applicants/pools-list`),
+
+  createPoolGuest: (payload) =>
+    request(`/applicants/pool-guest`, { method: "POST", body: JSON.stringify(payload) }),
+
   getCheckinList: () => request(`/applicants/checkin-list`),
 
   getPhotoStationList: (eventId) => request(`/applicants/photo-station-list?event_id=${eventId}`),
