@@ -41,6 +41,11 @@ export const api = {
 
   getEvents: () => request(`/events`),
 
+  getDirectory: () => request(`/applicants/directory`),
+
+  updateContactInfo: (applicantId, payload) =>
+    request(`/applicants/${applicantId}/contact-info`, { method: "PUT", body: JSON.stringify(payload) }),
+
   getMeasurement: (applicantId) => request(`/applicants/${applicantId}/measurement`),
 
   saveMeasurement: (applicantId, payload) =>

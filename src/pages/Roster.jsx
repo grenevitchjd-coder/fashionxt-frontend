@@ -1,52 +1,40 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../api.js";
-import { useEvent } from "../components/EventContext.jsx";
-import { StatusPill, PoolBadge, AuditionTag } from "../components/Badges.jsx";
+import { StatusPill } from "../components/Badges.jsx";
 
 export default function Roster() {
-  const { eventId } = useEvent();
+  const [all, setAll] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState(null);
   const fileInputRef = useRef(null);
 
   useEffect(() => {
-    if (!eventId) return;
-    loadRoster();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [eventId]);
+    load();
+  }, []);
 
-  async function loadRoster() {
+  async function load() {
     setLoading(true);
-    setError("");
     try {
-      const data = await api.getRoster(eventId);
-      setResults(data);
-    } catch (e) {
-      setError("Couldn't load roster. Check the event ID and API connection.");
+      const data = await api.getDirectory();
+      setAll(data);
     } finally {
       setLoading(false);
     }
   }
 
-  async function handleSearch(e) {
-    e.preventDefault();
-    if (!query.trim()) return loadRoster();
-    setLoading(true);
-    setError("");
-    try {
-      const data = await api.searchApplicants(query, eventId || undefined);
-      setResults(data);
-    } catch (e) {
-      setError("Search failed.");
-    } finally {
-      setLoading(false);
-    }
-  }
+  const results = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return all;
+    return all.filter(
+      (a) =>
+        a.full_name.toLowerCase().includes(q) ||
+        (a.email && a.email.toLowerCase().includes(q)) ||
+        (a.phone && a.phone.replace(/\D/g, "").includes(q.replace(/\D/g, "")) && q.replace(/\D/g, "").length >= 3)
+    );
+  }, [query, all]);
 
   async function handleCsvSelected(e) {
     const file = e.target.files?.[0];
@@ -56,6 +44,7 @@ export default function Roster() {
     try {
       const result = await api.importCsv(file);
       setImportResult(result);
+      await load();
     } catch (err) {
       setImportResult({ error: "Import failed — check the file and try again." });
     } finally {
@@ -64,10 +53,10 @@ export default function Roster() {
     }
   }
 
-  const importSection = (
-    <>
+  return (
+    <div className="page">
       <div className="section-header">
-        <span className="field-label" style={{ marginBottom: 0 }}>Roster</span>
+        <span className="field-label" style={{ marginBottom: 0 }}>Roster — all applicants</span>
         <button className="btn btn-outline btn-sm" onClick={() => fileInputRef.current?.click()} disabled={importing}>
           {importing ? "Importing…" : "Import CSV"}
         </button>
@@ -98,59 +87,49 @@ export default function Roster() {
           )}
         </div>
       )}
-    </>
-  );
 
-  if (!eventId) {
-    return (
-      <div className="page">
-        {importSection}
-        <div className="empty-state">
-          <h3>No event selected</h3>
-          <p>Set the event ID in the top-right corner to load a roster — or import a CSV above, no event needed.</p>
-        </div>
-      </div>
-    );
-  }
+      <input
+        className="search-input"
+        style={{ width: "100%", marginBottom: 12 }}
+        placeholder="Search name, email, or phone…"
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        autoFocus
+      />
 
-  return (
-    <div className="page">
-      {importSection}
-
-      <form className="search-bar" onSubmit={handleSearch}>
-        <input
-          className="search-input"
-          placeholder="Search name or audition number…"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-        />
-        <button className="btn btn-primary" type="submit">Search</button>
-      </form>
-
-      {error && <p style={{ color: "var(--no)", fontSize: 14 }}>{error}</p>}
-      {loading && <p style={{ color: "var(--muted)", fontSize: 14 }}>Loading…</p>}
+      <p style={{ color: "var(--muted)", fontSize: 13, marginBottom: 12 }}>
+        {loading ? "Loading…" : `${results.length} of ${all.length} applicant${all.length === 1 ? "" : "s"}`}
+      </p>
 
       {!loading && results.length === 0 && (
         <div className="empty-state">
           <h3>No models found</h3>
-          <p>Try a different search, or add a guest model.</p>
+          <p>Try a different search, or import a CSV above.</p>
         </div>
       )}
 
-      {results.map((a) => (
+      {results.slice(0, 100).map((a) => (
         <Link key={a.id} to={`/applicant/${a.id}`} style={{ textDecoration: "none" }}>
           <div className="card">
             <div className="card-row">
-              <AuditionTag number={a.audition_number} />
               <div className="card-main">
                 <div className="card-name">{a.full_name}</div>
-                <div className="card-meta">{a.category.replace("_", "-")}</div>
+                <div className="card-meta">
+                  {a.category.replace("_", "-")} · {a.email}
+                  {a.has_agency && " · Agency"}
+                </div>
               </div>
               <StatusPill status={a.casting_status} />
             </div>
           </div>
         </Link>
       ))}
+
+      {results.length > 100 && (
+        <p style={{ color: "var(--muted)", fontSize: 13, textAlign: "center", marginTop: 8 }}>
+          Showing first 100 — narrow your search to see more.
+        </p>
+      )}
     </div>
   );
 }

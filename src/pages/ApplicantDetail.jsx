@@ -15,11 +15,21 @@ const POOL_OPTIONS = [
   { key: "backup", label: "Backup" },
 ];
 
+const EMPTY_CONTACT = {
+  category: "female", email: "", phone: "",
+  agency_name: "", agency_address: "",
+  address_street: "", address_city: "", address_state: "",
+};
+
 export default function ApplicantDetail() {
   const { id } = useParams();
   const [applicant, setApplicant] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [contact, setContact] = useState(EMPTY_CONTACT);
+  const [hasAgency, setHasAgency] = useState(false);
+  const [contactSaving, setContactSaving] = useState(false);
+  const [contactSaved, setContactSaved] = useState(false);
 
   useEffect(() => {
     load();
@@ -31,8 +41,42 @@ export default function ApplicantDetail() {
     try {
       const data = await api.getApplicantDetail(id);
       setApplicant(data);
+      setContact({
+        category: data.category || "female",
+        email: data.email || "",
+        phone: data.phone || "",
+        agency_name: data.agency_name || "",
+        agency_address: data.agency_address || "",
+        address_street: data.address_street || "",
+        address_city: data.address_city || "",
+        address_state: data.address_state || "",
+      });
+      const agencyVal = (data.agency_name || "").trim().toUpperCase();
+      setHasAgency(agencyVal !== "" && agencyVal !== "N/A" && agencyVal !== "NA");
     } finally {
       setLoading(false);
+    }
+  }
+
+  function updateContact(key, value) {
+    setContact((c) => ({ ...c, [key]: value }));
+    setContactSaved(false);
+  }
+
+  async function handleContactSave(e) {
+    e.preventDefault();
+    setContactSaving(true);
+    try {
+      const payload = {
+        ...contact,
+        agency_name: hasAgency ? contact.agency_name : "N/A",
+        agency_address: hasAgency ? contact.agency_address : "",
+      };
+      await api.updateContactInfo(id, payload);
+      setContactSaved(true);
+      await load();
+    } finally {
+      setContactSaving(false);
     }
   }
 
@@ -90,6 +134,96 @@ export default function ApplicantDetail() {
           <strong style={{ color: "var(--maybe)", fontSize: 13 }}>PRESELECT — measurements only, not judged</strong>
         </div>
       )}
+
+      <div className="field">
+        <span className="field-label">Contact & agency — confirm and correct as needed</span>
+        <form onSubmit={handleContactSave} className="card">
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 12 }}>
+            <div>
+              <label style={{ fontSize: 12, color: "var(--muted)", display: "block", marginBottom: 3 }}>Modeling as</label>
+              <select
+                value={contact.category}
+                onChange={(e) => updateContact("category", e.target.value)}
+                style={{ width: "100%", padding: "7px 8px", borderRadius: 6, border: "1.5px solid var(--line-strong)", fontSize: 14, boxSizing: "border-box" }}
+              >
+                <option value="female">Female</option>
+                <option value="male">Male</option>
+                <option value="non_binary">Non-binary</option>
+              </select>
+            </div>
+            <div>
+              <label style={{ fontSize: 12, color: "var(--muted)", display: "block", marginBottom: 3 }}>Email</label>
+              <input
+                value={contact.email}
+                onChange={(e) => updateContact("email", e.target.value)}
+                style={{ width: "100%", padding: "7px 8px", borderRadius: 6, border: "1.5px solid var(--line-strong)", fontSize: 14, boxSizing: "border-box" }}
+              />
+            </div>
+            <div>
+              <label style={{ fontSize: 12, color: "var(--muted)", display: "block", marginBottom: 3 }}>Phone</label>
+              <input
+                value={contact.phone}
+                onChange={(e) => updateContact("phone", e.target.value)}
+                style={{ width: "100%", padding: "7px 8px", borderRadius: 6, border: "1.5px solid var(--line-strong)", fontSize: 14, boxSizing: "border-box" }}
+              />
+            </div>
+          </div>
+
+          <label style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10, fontSize: 14 }}>
+            <input type="checkbox" checked={hasAgency} onChange={(e) => setHasAgency(e.target.checked)} />
+            Signed with an agency
+          </label>
+
+          {hasAgency && (
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 12 }}>
+              <div>
+                <label style={{ fontSize: 12, color: "var(--muted)", display: "block", marginBottom: 3 }}>Agency name</label>
+                <input
+                  value={contact.agency_name}
+                  onChange={(e) => updateContact("agency_name", e.target.value)}
+                  style={{ width: "100%", padding: "7px 8px", borderRadius: 6, border: "1.5px solid var(--line-strong)", fontSize: 14, boxSizing: "border-box" }}
+                />
+              </div>
+              <div>
+                <label style={{ fontSize: 12, color: "var(--muted)", display: "block", marginBottom: 3 }}>Agency address</label>
+                <input
+                  value={contact.agency_address}
+                  onChange={(e) => updateContact("agency_address", e.target.value)}
+                  style={{ width: "100%", padding: "7px 8px", borderRadius: 6, border: "1.5px solid var(--line-strong)", fontSize: 14, boxSizing: "border-box" }}
+                />
+              </div>
+            </div>
+          )}
+
+          <label style={{ fontSize: 12, color: "var(--muted)", display: "block", marginBottom: 6 }}>Model's address</label>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 12 }}>
+            <input
+              placeholder="Street"
+              value={contact.address_street}
+              onChange={(e) => updateContact("address_street", e.target.value)}
+              style={{ padding: "7px 8px", borderRadius: 6, border: "1.5px solid var(--line-strong)", fontSize: 14, boxSizing: "border-box" }}
+            />
+            <input
+              placeholder="City"
+              value={contact.address_city}
+              onChange={(e) => updateContact("address_city", e.target.value)}
+              style={{ padding: "7px 8px", borderRadius: 6, border: "1.5px solid var(--line-strong)", fontSize: 14, boxSizing: "border-box" }}
+            />
+            <input
+              placeholder="State, Zip"
+              value={contact.address_state}
+              onChange={(e) => updateContact("address_state", e.target.value)}
+              style={{ padding: "7px 8px", borderRadius: 6, border: "1.5px solid var(--line-strong)", fontSize: 14, boxSizing: "border-box" }}
+            />
+          </div>
+
+          {contactSaved && <p style={{ color: "var(--yes)", fontSize: 13, fontWeight: 600, margin: "0 0 10px" }}>Saved.</p>}
+
+          <button type="submit" className="btn btn-brass btn-sm" disabled={contactSaving}>
+            {contactSaving ? "Saving…" : "Save contact info"}
+          </button>
+        </form>
+      </div>
 
       <div className="field">
         <span className="field-label">Casting decision</span>

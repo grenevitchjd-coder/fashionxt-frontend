@@ -35,8 +35,10 @@ export default function App() {
         {/* Public — no topbar, no login, reached via share link */}
         <Route path="/deck/:token" element={<DesignerView />} />
 
-        {/* Admin — password required (Roster, Model Pools, Decks, Add Guest) */}
-        <Route path="/" element={<StaffLayout guarded><Roster /></StaffLayout>} />
+        {/* Roster is ungated — a public search/confirm directory over every applicant */}
+        <Route path="/" element={<StaffLayout><Roster /></StaffLayout>} />
+
+        {/* Admin — password required (Model Pools, Decks, Add Guest) */}
         <Route path="/pools" element={<StaffLayout guarded><ModelPools /></StaffLayout>} />
         <Route path="/pools/add-guest" element={<StaffLayout guarded><AddPoolGuest /></StaffLayout>} />
         <Route path="/decks" element={<StaffLayout guarded><Decks /></StaffLayout>} />
