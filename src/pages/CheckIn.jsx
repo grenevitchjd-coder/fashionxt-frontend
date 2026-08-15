@@ -1,23 +1,15 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../api.js";
 import { useEvent } from "../components/EventContext.jsx";
-import { AuditionTag } from "../components/Badges.jsx";
 
 export default function CheckIn() {
   const { eventId } = useEvent();
   const [allApplicants, setAllApplicants] = useState([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
-  const [selected, setSelected] = useState(null);
-  const [auditionNumber, setAuditionNumber] = useState("");
-  const [preselect, setPreselect] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
-  const [justAssigned, setJustAssigned] = useState(null);
+  const searchRef = useRef(null);
 
-  // Loaded once when the screen opens — everything after this is instant,
-  // in-memory filtering. No network round-trip per keystroke.
   useEffect(() => {
     load();
   }, []);
@@ -44,40 +36,22 @@ export default function CheckIn() {
       .slice(0, 25);
   }, [query, allApplicants]);
 
-  function selectPerson(person) {
-    setSelected(person);
-    setAuditionNumber(person.event_id === Number(eventId) && person.audition_number ? String(person.audition_number) : "");
-    setPreselect(false);
-    setError("");
-    setJustAssigned(null);
-  }
-
-  async function handleAssign(e) {
-    e.preventDefault();
-    if (!eventId) return setError("Set an event ID at the top of the screen first.");
-    if (!auditionNumber) return setError("Enter an audition number.");
-    setSaving(true);
-    setError("");
-    try {
-      await api.checkinApplicant(selected.id, {
-        event_id: Number(eventId),
-        audition_number: Number(auditionNumber),
-        preselect,
-      });
-      setJustAssigned({ name: selected.full_name, number: auditionNumber });
-      // Update local cache so the list reflects it immediately without a refetch
-      setAllApplicants((prev) =>
-        prev.map((a) =>
-          a.id === selected.id ? { ...a, event_id: Number(eventId), audition_number: Number(auditionNumber) } : a
-        )
-      );
-      setSelected(null);
-      setQuery("");
-    } catch (err) {
-      setError("Couldn't assign that number — it may already be taken for this event.");
-    } finally {
-      setSaving(false);
+  // Numbers already in use for THIS event — checked instantly against the
+  // preloaded list, no network round-trip needed to catch a duplicate.
+  const takenNumbers = useMemo(() => {
+    const map = {};
+    for (const a of allApplicants) {
+      if (a.event_id === Number(eventId) && a.audition_number != null) {
+        map[a.audition_number] = a.full_name;
+      }
     }
+    return map;
+  }, [allApplicants, eventId]);
+
+  function handleAssigned(applicantId, number) {
+    setAllApplicants((prev) =>
+      prev.map((a) => (a.id === applicantId ? { ...a, event_id: Number(eventId), audition_number: number } : a))
+    );
   }
 
   if (!eventId) {
@@ -98,89 +72,94 @@ export default function CheckIn() {
         {loading ? "Loading applicant list…" : `${allApplicants.length} applicants loaded — search is instant`}
       </p>
 
-      {justAssigned && (
-        <div className="card" style={{ background: "var(--yes-bg)", borderColor: "var(--yes)", marginBottom: 16 }}>
-          <strong style={{ color: "var(--yes)" }}>
-            {justAssigned.name} assigned #{String(justAssigned.number).padStart(3, "0")}
-          </strong>
+      <input
+        ref={searchRef}
+        className="search-input"
+        style={{ width: "100%", marginBottom: 12 }}
+        placeholder="Search name or phone…"
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        autoFocus
+      />
+
+      {query.trim() && results.length === 0 && (
+        <div className="empty-state">
+          <h3>No match found</h3>
+          <p>They may not have applied online. <Link to="/add" style={{ color: "var(--brass)" }}>Add them as a guest</Link> instead.</p>
         </div>
       )}
 
-      {!selected && (
-        <>
-          <input
-            className="search-input"
-            style={{ width: "100%", marginBottom: 12 }}
-            placeholder="Search name or phone…"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            autoFocus
-          />
+      {results.map((person) => (
+        <CheckInRow
+          key={person.id}
+          person={person}
+          eventId={eventId}
+          takenNumbers={takenNumbers}
+          onAssigned={(number) => {
+            handleAssigned(person.id, number);
+            setQuery("");
+            searchRef.current?.focus();
+          }}
+        />
+      ))}
+    </div>
+  );
+}
 
-          {query.trim() && results.length === 0 && (
-            <div className="empty-state">
-              <h3>No match found</h3>
-              <p>They may not have applied online. <Link to="/add" style={{ color: "var(--brass)" }}>Add them as a guest</Link> instead.</p>
-            </div>
+function CheckInRow({ person, eventId, takenNumbers, onAssigned }) {
+  const alreadyCheckedIn = person.event_id === Number(eventId) && person.audition_number;
+  const [number, setNumber] = useState(alreadyCheckedIn ? String(person.audition_number) : "");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  const numVal = number ? Number(number) : null;
+  const conflictName =
+    numVal && takenNumbers[numVal] && takenNumbers[numVal] !== person.full_name ? takenNumbers[numVal] : null;
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    if (!numVal) return setError("Enter a number");
+    if (conflictName) return setError(`Already used by ${conflictName}`);
+    setSaving(true);
+    setError("");
+    try {
+      await api.checkinApplicant(person.id, { event_id: Number(eventId), audition_number: numVal });
+      onAssigned(numVal);
+    } catch (err) {
+      setError("Number already taken — try another");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="card">
+      <form onSubmit={handleSubmit} className="card-row" style={{ alignItems: "flex-start" }}>
+        <div className="card-main">
+          <div className="card-name">{person.full_name}</div>
+          <div className="card-meta">
+            {person.phone || person.email} · {person.category.replace("_", "-")}
+          </div>
+          {error && <div style={{ color: "var(--no)", fontSize: 12, marginTop: 4 }}>{error}</div>}
+          {!error && conflictName && (
+            <div style={{ color: "var(--maybe)", fontSize: 12, marginTop: 4 }}>Already used by {conflictName}</div>
           )}
-
-          {results.map((person) => {
-            const alreadyCheckedIn = person.event_id === Number(eventId) && person.audition_number;
-            return (
-              <div className="card" key={person.id} onClick={() => selectPerson(person)} style={{ cursor: "pointer" }}>
-                <div className="card-row">
-                  <div className="card-main">
-                    <div className="card-name">{person.full_name}</div>
-                    <div className="card-meta">
-                      {person.phone || person.email} · {person.category.replace("_", "-")}
-                    </div>
-                  </div>
-                  {alreadyCheckedIn ? (
-                    <AuditionTag number={person.audition_number} />
-                  ) : (
-                    <span className="status-pill status-pending">Not checked in</span>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </>
-      )}
-
-      {selected && (
-        <form onSubmit={handleAssign}>
-          <div className="card" style={{ marginBottom: 16 }}>
-            <div className="card-name">{selected.full_name}</div>
-            <div className="card-meta">{selected.phone || selected.email} · {selected.category.replace("_", "-")}</div>
-          </div>
-
-          <div className="field">
-            <span className="field-label">Audition number</span>
-            <input
-              type="number"
-              autoFocus
-              value={auditionNumber}
-              onChange={(e) => setAuditionNumber(e.target.value)}
-            />
-          </div>
-
-          <label style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16, fontSize: 14 }}>
-            <input type="checkbox" checked={preselect} onChange={(e) => setPreselect(e.target.checked)} />
-            Preselect (measurements only, not judged)
-          </label>
-
-          {error && <p style={{ color: "var(--no)", fontSize: 14 }}>{error}</p>}
-
-          <div style={{ display: "flex", gap: 8 }}>
-            <button type="button" className="btn btn-outline" style={{ flex: 1 }} onClick={() => setSelected(null)}>
-              Cancel
-            </button>
-            <button type="submit" className="btn btn-brass" style={{ flex: 1 }} disabled={saving}>
-              {saving ? "Assigning…" : "Assign & check in"}
-            </button>
-          </div>
-        </form>
-      )}
+        </div>
+        <input
+          type="number"
+          value={number}
+          onChange={(e) => { setNumber(e.target.value); setError(""); }}
+          placeholder="#"
+          style={{ width: 70, padding: "8px 10px", borderRadius: 8, border: "1.5px solid var(--line-strong)", fontSize: 15 }}
+        />
+        <button
+          type="submit"
+          className="btn btn-brass btn-sm"
+          disabled={saving || !numVal || !!conflictName}
+        >
+          {saving ? "…" : alreadyCheckedIn ? "Update" : "Assign"}
+        </button>
+      </form>
     </div>
   );
 }
