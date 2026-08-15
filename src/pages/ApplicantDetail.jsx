@@ -1,0 +1,169 @@
+import { useEffect, useState } from "react";
+import { useParams, Link } from "react-router-dom";
+import { api } from "../api.js";
+import { PoolBadge, AuditionTag } from "../components/Badges.jsx";
+
+const STATUS_OPTIONS = [
+  { key: "yes", label: "Yes", cls: "active-yes" },
+  { key: "maybe", label: "Maybe", cls: "active-maybe" },
+  { key: "no", label: "No", cls: "active-no" },
+];
+
+const POOL_OPTIONS = [
+  { key: "pool_a", label: "Pool A" },
+  { key: "pool_b", label: "Pool B" },
+  { key: "backup", label: "Backup" },
+];
+
+export default function ApplicantDetail() {
+  const { id } = useParams();
+  const [applicant, setApplicant] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
+
+  async function load() {
+    setLoading(true);
+    try {
+      const data = await api.getApplicantDetail(id);
+      setApplicant(data);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleStatus(status) {
+    setSaving(true);
+    try {
+      await api.updateCastingStatus(id, { casting_status: status });
+      await load();
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function togglePreselect() {
+    setSaving(true);
+    try {
+      await api.updateCastingStatus(id, {
+        casting_status: applicant.casting_status,
+        preselect: !applicant.preselect,
+      });
+      await load();
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handlePool(pool) {
+    setSaving(true);
+    try {
+      await api.setPool(id, applicant.pool === pool ? null : pool);
+      await load();
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (loading) return <div className="page"><p style={{ color: "var(--muted)" }}>Loading…</p></div>;
+  if (!applicant) return <div className="page"><p>Not found.</p></div>;
+
+  return (
+    <div className="page">
+      <div className="card-row" style={{ marginBottom: 20 }}>
+        <AuditionTag number={applicant.audition_number} large />
+        <div>
+          <h1 style={{ fontSize: 22 }}>{applicant.full_name}</h1>
+          <div className="card-meta">
+            {applicant.category.replace("_", "-")} · {applicant.address_city}
+            {applicant.address_state ? `, ${applicant.address_state}` : ""}
+          </div>
+        </div>
+      </div>
+
+      {applicant.preselect && (
+        <div className="card" style={{ background: "var(--maybe-bg)", borderColor: "var(--maybe)", marginBottom: 16 }}>
+          <strong style={{ color: "var(--maybe)", fontSize: 13 }}>PRESELECT — measurements only, not judged</strong>
+        </div>
+      )}
+
+      <div className="field">
+        <span className="field-label">Casting decision</span>
+        <div style={{ display: "flex", gap: 8 }}>
+          {STATUS_OPTIONS.map((opt) => (
+            <button
+              key={opt.key}
+              className={`btn-status${applicant.casting_status === opt.key ? " " + opt.cls : ""}`}
+              disabled={saving}
+              onClick={() => handleStatus(opt.key)}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+        <button
+          className="btn btn-outline btn-sm"
+          style={{ marginTop: 8 }}
+          onClick={togglePreselect}
+          disabled={saving}
+        >
+          {applicant.preselect ? "Remove preselect flag" : "Mark as preselect"}
+        </button>
+      </div>
+
+      <div className="field">
+        <span className="field-label">Pool</span>
+        <div style={{ display: "flex", gap: 8 }}>
+          {POOL_OPTIONS.map((opt) => (
+            <button
+              key={opt.key}
+              className="btn btn-outline btn-sm"
+              style={
+                applicant.pool === opt.key
+                  ? { background: "var(--ink)", color: "#fff", borderColor: "var(--ink)" }
+                  : undefined
+              }
+              disabled={saving}
+              onClick={() => handlePool(opt.key)}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {applicant.measurement && (
+        <div className="field">
+          <span className="field-label">Measurements</span>
+          <div className="card">
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, fontSize: 14 }}>
+              <div><span style={{ color: "var(--muted)" }}>Height</span><br />{applicant.measurement.height || "—"}</div>
+              <div><span style={{ color: "var(--muted)" }}>Bust/chest</span><br />{applicant.measurement.bust_chest || "—"}</div>
+              <div><span style={{ color: "var(--muted)" }}>Waist</span><br />{applicant.measurement.waist_size || "—"}</div>
+              <div><span style={{ color: "var(--muted)" }}>Hip</span><br />{applicant.measurement.hip_size || "—"}</div>
+              <div><span style={{ color: "var(--muted)" }}>Shoe</span><br />{applicant.measurement.shoe_size || "—"}</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="field">
+        <div className="section-header">
+          <span className="field-label" style={{ marginBottom: 0 }}>Photos ({applicant.photos.length})</span>
+          <Link to={`/photo/${applicant.id}`} className="btn btn-brass btn-sm">Add photo</Link>
+        </div>
+        {applicant.photos.length > 0 ? (
+          <div className="photo-grid">
+            {applicant.photos.map((p) => <img key={p.id} src={p.url} alt={p.tag || "model photo"} />)}
+          </div>
+        ) : (
+          <p style={{ color: "var(--muted)", fontSize: 14 }}>No photos yet.</p>
+        )}
+      </div>
+    </div>
+  );
+}
