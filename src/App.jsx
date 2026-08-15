@@ -5,6 +5,7 @@ import RequireAuth from "./components/RequireAuth.jsx";
 import Placeholder from "./pages/Placeholder.jsx";
 import Roster from "./pages/Roster.jsx";
 import CheckIn from "./pages/CheckIn.jsx";
+import CastingDirectors from "./pages/CastingDirectors.jsx";
 import ApplicantDetail from "./pages/ApplicantDetail.jsx";
 import PhotoCapture from "./pages/PhotoCapture.jsx";
 import ManualAdd from "./pages/ManualAdd.jsx";
@@ -37,6 +38,7 @@ export default function App() {
 
         {/* Audition-day stations — no password, needs to be instant */}
         <Route path="/checkin" element={<StaffLayout><CheckIn /></StaffLayout>} />
+        <Route path="/casting" element={<StaffLayout><CastingDirectors /></StaffLayout>} />
         <Route path="/applicant/:id" element={<StaffLayout><ApplicantDetail /></StaffLayout>} />
         <Route path="/photo/:id" element={<StaffLayout><PhotoCapture /></StaffLayout>} />
         <Route path="/audition/portland" element={<StaffLayout><Placeholder title="Portland Auditions" /></StaffLayout>} />

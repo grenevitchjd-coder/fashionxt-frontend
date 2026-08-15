@@ -16,6 +16,7 @@ export default function Topbar() {
         <NavLink to="/add">Add guest</NavLink>
         <span style={{ width: 1, background: "rgba(255,255,255,0.15)", margin: "0 2px" }} />
         <NavLink to="/checkin">Check-in</NavLink>
+        <NavLink to="/casting">Casting Directors</NavLink>
         <NavLink to="/audition/portland">Portland</NavLink>
         <NavLink to="/audition/seattle">Seattle</NavLink>
       </div>
