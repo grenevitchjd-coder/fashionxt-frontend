@@ -67,7 +67,7 @@ export default function CastingDirectors() {
   const isSearching = searchResults !== null;
 
   return (
-    <div className="page">
+    <div className="page" style={{ maxWidth: 900 }}>
       <div className="section-header">
         <h1 style={{ fontSize: 20 }}>Casting Directors</h1>
         <button className="btn btn-outline btn-sm" onClick={load} disabled={loading}>
@@ -117,51 +117,45 @@ function JudgeRow({ person, onDecided }) {
   }
 
   return (
-    <div className="card">
-      <div className="card-row" style={{ marginBottom: person.casting_status !== "pending" || person.preselect ? 8 : 0 }}>
-        <AuditionTag number={person.audition_number} large />
+    <div className="card" style={{ padding: "10px 14px" }}>
+      <div className="card-row" style={{ gap: 12 }}>
+        <AuditionTag number={person.audition_number} />
         <div className="card-main">
-          <div className="card-name">{person.full_name}</div>
+          <div className="card-name" style={{ fontSize: 15 }}>{person.full_name}</div>
           <div className="card-meta">
             {person.category.replace("_", "-")}
             {person.height_no_shoes ? ` · ${person.height_no_shoes}` : ""}
+            {person.available_show_days ? ` · Avail: ${person.available_show_days}` : ""}
           </div>
-          {person.available_show_days && (
-            <div style={{ color: "var(--muted)", fontSize: 12, marginTop: 2 }}>
-              Available: {person.available_show_days}
+          {person.preselect && (
+            <div style={{ color: "var(--maybe)", fontSize: 11, fontWeight: 600, marginTop: 2 }}>
+              PRESELECT — not judged
             </div>
           )}
         </div>
-      </div>
-
-      {person.preselect && (
-        <div style={{ color: "var(--maybe)", fontSize: 12, fontWeight: 600, marginBottom: 8 }}>
-          PRESELECT — not judged
+        <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
+          <button
+            className={`btn-status btn-status-sm${person.casting_status === "yes" ? " active-yes" : ""}`}
+            disabled={saving}
+            onClick={() => decide("yes")}
+          >
+            Yes
+          </button>
+          <button
+            className={`btn-status btn-status-sm${person.casting_status === "maybe" ? " active-maybe" : ""}`}
+            disabled={saving}
+            onClick={() => decide("maybe")}
+          >
+            Maybe
+          </button>
+          <button
+            className={`btn-status btn-status-sm${person.casting_status === "no" ? " active-no" : ""}`}
+            disabled={saving}
+            onClick={() => decide("no")}
+          >
+            No
+          </button>
         </div>
-      )}
-
-      <div style={{ display: "flex", gap: 8 }}>
-        <button
-          className={`btn-status${person.casting_status === "yes" ? " active-yes" : ""}`}
-          disabled={saving}
-          onClick={() => decide("yes")}
-        >
-          Yes
-        </button>
-        <button
-          className={`btn-status${person.casting_status === "maybe" ? " active-maybe" : ""}`}
-          disabled={saving}
-          onClick={() => decide("maybe")}
-        >
-          Maybe
-        </button>
-        <button
-          className={`btn-status${person.casting_status === "no" ? " active-no" : ""}`}
-          disabled={saving}
-          onClick={() => decide("no")}
-        >
-          No
-        </button>
       </div>
     </div>
   );
