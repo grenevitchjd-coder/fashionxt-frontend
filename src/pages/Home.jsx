@@ -5,12 +5,12 @@ const PASSWORD = "Fash10nxt";
 const UNLOCK_KEY = "fx_unlocked";
 
 const BUTTONS = [
-  { label: "Roster", path: "/roster", accent: "var(--brass)" },
-  { label: "Model Pools", path: "/pools", accent: "var(--navy)" },
-  { label: "Decks", path: "/decks", accent: "var(--brass)" },
-  { label: "Add Guest", path: "/add", accent: "var(--navy)" },
-  { label: "Portland Auditions", path: "/audition/portland", accent: "var(--yes)" },
-  { label: "Seattle Auditions", path: "/audition/seattle", accent: "var(--yes)" },
+  { label: "Roster", path: "/roster", accent: "var(--brass)", protected: true },
+  { label: "Model Pools", path: "/pools", accent: "var(--navy)", protected: true },
+  { label: "Decks", path: "/decks", accent: "var(--brass)", protected: true },
+  { label: "Add Guest", path: "/add", accent: "var(--navy)", protected: true },
+  { label: "Portland Auditions", path: "/audition/portland", accent: "var(--yes)", protected: false },
+  { label: "Seattle Auditions", path: "/audition/seattle", accent: "var(--yes)", protected: false },
 ];
 
 function isUnlocked() {
@@ -24,7 +24,7 @@ export default function Home() {
   const [error, setError] = useState("");
 
   function handleClick(btn) {
-    if (isUnlocked()) {
+    if (!btn.protected || isUnlocked()) {
       navigate(btn.path);
     } else {
       setPending(btn);
