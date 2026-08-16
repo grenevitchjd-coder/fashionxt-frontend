@@ -65,13 +65,15 @@ export default function DeckView() {
         </p>
       </div>
 
-      <div style={{ maxWidth: 900, margin: "0 auto", padding: "20px 16px 60px" }}>
+      <div style={{ maxWidth: 1100, margin: "0 auto", padding: "24px 16px 60px" }}>
         {deck.models.length === 0 && (
           <p style={{ textAlign: "center", color: "#888", marginTop: 40 }}>No models assigned to your lineup yet.</p>
         )}
-        {deck.models.map((m) => (
-          <ModelCard key={m.applicant_id} model={m} onPreference={handlePreference} />
-        ))}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 20 }}>
+          {deck.models.map((m) => (
+            <ModelCard key={m.applicant_id} model={m} onPreference={handlePreference} />
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -79,22 +81,68 @@ export default function DeckView() {
 
 function ModelCard({ model, onPreference }) {
   const m = model.measurement || {};
+  const heroPhoto = model.main_photos[0] || model.extra_photos[0];
+  const otherPhotos = [...model.main_photos.slice(1), ...model.extra_photos].filter(
+    (p) => !heroPhoto || p.tag !== heroPhoto.tag
+  );
+
   return (
-    <div style={{ background: "#fff", borderRadius: 12, marginBottom: 20, overflow: "hidden", boxShadow: "0 1px 4px rgba(0,0,0,0.08)" }}>
-      <div style={{ padding: "16px 20px", borderBottom: "1px solid #eee", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
-        <div>
-          <div style={{ fontSize: 18, fontWeight: 700 }}>{model.full_name}</div>
-          <div style={{ fontSize: 12, color: "#888" }}>
-            {model.category.replace("_", "-")}
-            {model.is_minor && <span style={{ color: "#c0392b", fontWeight: 700, marginLeft: 8 }}>MINOR</span>}
+    <div style={{ background: "#fff", borderRadius: 14, overflow: "hidden", boxShadow: "0 2px 10px rgba(0,0,0,0.08)", display: "flex", flexDirection: "column" }}>
+      <div style={{ position: "relative", aspectRatio: "3/4", background: "#eee" }}>
+        {heroPhoto ? (
+          <img src={heroPhoto.url} alt={model.full_name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+        ) : (
+          <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "#aaa", fontSize: 13 }}>
+            No photo
           </div>
+        )}
+        {model.is_minor && (
+          <div style={{ position: "absolute", top: 10, left: 10, background: "#c0392b", color: "#fff", fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 5, letterSpacing: 0.3 }}>
+            MINOR
+          </div>
+        )}
+      </div>
+
+      {otherPhotos.length > 0 && (
+        <div style={{ display: "flex", gap: 4, padding: "8px 12px 0" }}>
+          {otherPhotos.slice(0, 5).map((p, i) => (
+            <img key={p.tag + i} src={p.url} alt={p.tag} style={{ width: 40, height: 40, borderRadius: 6, objectFit: "cover", flexShrink: 0 }} />
+          ))}
+          {otherPhotos.length > 5 && (
+            <div style={{ width: 40, height: 40, borderRadius: 6, background: "#f2f2f2", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: "#888", flexShrink: 0 }}>
+              +{otherPhotos.length - 5}
+            </div>
+          )}
         </div>
-        <div style={{ display: "flex", gap: 8 }}>
+      )}
+
+      <div style={{ padding: "14px 16px 16px", flex: 1, display: "flex", flexDirection: "column" }}>
+        <div style={{ fontSize: 17, fontWeight: 700, marginBottom: 2 }}>{model.full_name}</div>
+        <div style={{ fontSize: 12, color: "#999", marginBottom: 10, textTransform: "capitalize" }}>{model.category.replace("_", "-")}</div>
+
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "4px 12px", fontSize: 12.5, color: "#444", marginBottom: 12 }}>
+          {m.height && <span><strong>Height</strong> {m.height}</span>}
+          {m.bust_chest && <span><strong>Bust/Chest</strong> {m.bust_chest}</span>}
+          {m.waist_size && <span><strong>Waist</strong> {m.waist_size}</span>}
+          {m.hip_size && <span><strong>Hip</strong> {m.hip_size}</span>}
+          {m.shoe_size && <span><strong>Shoe</strong> {m.shoe_size}</span>}
+          {m.dress_size && <span><strong>Dress</strong> {m.dress_size}</span>}
+          {m.jacket_size && <span><strong>Jacket</strong> {m.jacket_size}</span>}
+        </div>
+
+        {(m.tattoos || m.piercings) && (
+          <div style={{ fontSize: 11.5, color: "#888", marginBottom: 12 }}>
+            {m.tattoos && <div>Tattoos: {m.tattoos}</div>}
+            {m.piercings && <div>Piercings: {m.piercings}</div>}
+          </div>
+        )}
+
+        <div style={{ display: "flex", gap: 6, marginTop: "auto" }}>
           <button
             onClick={() => onPreference(model.applicant_id, "one")}
             style={{
-              padding: "8px 14px", borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: "pointer",
-              border: model.preference === "one" ? "2px solid #2e7d32" : "1.5px solid #ccc",
+              flex: 1, padding: "9px 0", borderRadius: 8, fontSize: 12.5, fontWeight: 700, cursor: "pointer",
+              border: model.preference === "one" ? "2px solid #2e7d32" : "1.5px solid #ddd",
               background: model.preference === "one" ? "#2e7d32" : "#fff",
               color: model.preference === "one" ? "#fff" : "#333",
             }}
@@ -104,8 +152,8 @@ function ModelCard({ model, onPreference }) {
           <button
             onClick={() => onPreference(model.applicant_id, "two")}
             style={{
-              padding: "8px 14px", borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: "pointer",
-              border: model.preference === "two" ? "2px solid #c9962b" : "1.5px solid #ccc",
+              flex: 1, padding: "9px 0", borderRadius: 8, fontSize: 12.5, fontWeight: 700, cursor: "pointer",
+              border: model.preference === "two" ? "2px solid #c9962b" : "1.5px solid #ddd",
               background: model.preference === "two" ? "#c9962b" : "#fff",
               color: model.preference === "two" ? "#fff" : "#333",
             }}
@@ -114,52 +162,6 @@ function ModelCard({ model, onPreference }) {
           </button>
         </div>
       </div>
-
-      <div style={{ padding: "16px 20px" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(90px, 1fr))", gap: 10, fontSize: 13, marginBottom: 16 }}>
-          <Stat label="Height" value={m.height} />
-          <Stat label="Bust/Chest" value={m.bust_chest} />
-          <Stat label="Waist" value={m.waist_size} />
-          <Stat label="Hip" value={m.hip_size} />
-          <Stat label="Shoe" value={m.shoe_size} />
-          <Stat label="Dress" value={m.dress_size} />
-          <Stat label="Jacket" value={m.jacket_size} />
-        </div>
-        {(m.tattoos || m.piercings) && (
-          <div style={{ fontSize: 12, color: "#666", marginBottom: 16 }}>
-            {m.tattoos && <div>Tattoos: {m.tattoos}</div>}
-            {m.piercings && <div>Piercings: {m.piercings}</div>}
-          </div>
-        )}
-
-        {model.main_photos.length > 0 && (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: 8, marginBottom: model.extra_photos.length > 0 ? 12 : 0 }}>
-            {model.main_photos.map((p) => (
-              <img key={p.tag} src={p.url} alt={p.tag} style={{ width: "100%", aspectRatio: "3/4", objectFit: "cover", borderRadius: 8 }} />
-            ))}
-          </div>
-        )}
-        {model.extra_photos.length > 0 && (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(90px, 1fr))", gap: 8 }}>
-            {model.extra_photos.map((p, i) => (
-              <img key={p.tag + i} src={p.url} alt={p.tag} style={{ width: "100%", aspectRatio: "1/1", objectFit: "cover", borderRadius: 6 }} />
-            ))}
-          </div>
-        )}
-        {model.main_photos.length === 0 && model.extra_photos.length === 0 && (
-          <p style={{ fontSize: 12, color: "#aaa" }}>No photos yet.</p>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function Stat({ label, value }) {
-  if (!value) return null;
-  return (
-    <div>
-      <div style={{ color: "#999", fontSize: 11, textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</div>
-      <div style={{ fontWeight: 600 }}>{value}</div>
     </div>
   );
 }
