@@ -17,9 +17,7 @@ import MeasurementEntry from "./pages/MeasurementEntry.jsx";
 import ApplicantDetail from "./pages/ApplicantDetail.jsx";
 import PhotoCapture from "./pages/PhotoCapture.jsx";
 import ManualAdd from "./pages/ManualAdd.jsx";
-import Decks from "./pages/Decks.jsx";
-import DeckBuilder from "./pages/DeckBuilder.jsx";
-import DesignerView from "./pages/DesignerView.jsx";
+import DeckView from "./pages/DeckView.jsx";
 
 function StaffLayout({ children, guarded }) {
   return (
@@ -34,19 +32,17 @@ export default function App() {
   return (
     <EventProvider>
       <Routes>
-        {/* Public — no topbar, no login, reached via share link */}
-        <Route path="/deck/:token" element={<DesignerView />} />
+        {/* Public — no topbar, no login, reached via each designer's unique share link */}
+        <Route path="/deck/:token" element={<DeckView />} />
 
         {/* Roster is ungated — a public search/confirm directory over every applicant */}
         <Route path="/" element={<StaffLayout><Roster /></StaffLayout>} />
 
-        {/* Admin — password required (Model Pools, Decks, Add Guest) */}
+        {/* Admin — password required */}
         <Route path="/pools" element={<StaffLayout guarded><ModelPools /></StaffLayout>} />
         <Route path="/pools/add-guest" element={<StaffLayout guarded><AddPoolGuest /></StaffLayout>} />
         <Route path="/designers" element={<StaffLayout guarded><Designers /></StaffLayout>} />
         <Route path="/final-roster" element={<StaffLayout guarded><FinalRoster /></StaffLayout>} />
-        <Route path="/decks" element={<StaffLayout guarded><Decks /></StaffLayout>} />
-        <Route path="/decks/:deckId" element={<StaffLayout guarded><DeckBuilder /></StaffLayout>} />
         <Route path="/add" element={<StaffLayout guarded><ManualAdd /></StaffLayout>} />
 
         {/* Audition-day stations — no password, needs to be instant */}

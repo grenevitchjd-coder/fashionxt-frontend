@@ -111,26 +111,8 @@ export const api = {
     });
   },
 
-  listDecks: (eventId) => request(`/decks?event_id=${eventId}`),
+  getDesignerDeck: (token) => request(`/deck/${token}`),
 
-  createDeck: (eventId, designerName) =>
-    request(`/decks?event_id=${eventId}&designer_name=${encodeURIComponent(designerName)}`, {
-      method: "POST",
-    }),
-
-  getDeck: (deckId) => request(`/decks/${deckId}`),
-
-  addModelToDeck: (deckId, applicantId) =>
-    request(`/decks/${deckId}/models/${applicantId}`, { method: "PUT" }),
-
-  removeModelFromDeck: (deckId, applicantId) =>
-    request(`/decks/${deckId}/models/${applicantId}`, { method: "DELETE" }),
-
-  viewDeckByToken: (token) => request(`/decks/view/${token}`),
-
-  setDesignerResponse: (token, applicantId, response) =>
-    request(
-      `/decks/view/${token}/models/${applicantId}/response?designer_response=${response || ""}`,
-      { method: "PUT" }
-    ),
+  setDeckPreference: (token, applicantId, preference) =>
+    request(`/deck/${token}/models/${applicantId}/preference`, { method: "PUT", body: JSON.stringify({ preference }) }),
 };

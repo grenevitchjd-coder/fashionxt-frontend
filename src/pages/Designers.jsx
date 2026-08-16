@@ -183,6 +183,16 @@ function DesignerRow({
   expanded, onToggle, onMoveDesigner, onRemove, onMoveDay,
   onAddModel, onRemoveModel, onMoveModel,
 }) {
+  const [linkCopied, setLinkCopied] = useState(false);
+
+  function handleCopyLink() {
+    const url = `${window.location.origin}/deck/${designer.share_token}`;
+    navigator.clipboard.writeText(url).then(() => {
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 2000);
+    });
+  }
+
   return (
     <div className="card" style={{ marginBottom: 8 }}>
       <div className="card-row">
@@ -222,6 +232,9 @@ function DesignerRow({
 
         <button className="btn btn-outline btn-sm" onClick={onToggle}>
           {expanded ? "Hide lineup" : "Edit lineup"}
+        </button>
+        <button className="btn btn-brass btn-sm" onClick={handleCopyLink}>
+          {linkCopied ? "Copied!" : "Copy deck link"}
         </button>
         <select
           value=""
@@ -271,6 +284,8 @@ function DesignerRow({
                   <span style={{ fontSize: 11, color: "var(--muted)", width: 16 }}>{idx + 1}</span>
                   <span style={{ flex: 1 }}>
                     {m.full_name} <span style={{ color: "var(--muted)", fontSize: 12 }}>({m.category.replace("_", "-")})</span>
+                    {m.preference === "one" && <span style={{ marginLeft: 6, fontSize: 10, fontWeight: 700, color: "var(--yes)" }}>★ Preferred 1</span>}
+                    {m.preference === "two" && <span style={{ marginLeft: 6, fontSize: 10, fontWeight: 700, color: "var(--brass)" }}>Preferred 2</span>}
                   </span>
                   <button
                     className="btn btn-outline btn-sm"
