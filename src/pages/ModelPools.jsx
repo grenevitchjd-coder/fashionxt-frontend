@@ -15,6 +15,12 @@ const POOL_OPTIONS = [
   { key: "backup", label: "Alternate" },
 ];
 
+const AVAIL_DAYS = [
+  { key: "thursday", label: "Th" },
+  { key: "friday", label: "Fr" },
+  { key: "saturday", label: "Sa" },
+];
+
 // Parses "28", "28.5", "28 1/2\"", "30\"" etc into a plain number.
 function parseLeadingNumber(str) {
   if (str === null || str === undefined) return null;
@@ -56,6 +62,7 @@ function inRange(value, range, parseFn) {
 }
 
 const EMPTY_RANGE = { min: "", max: "" };
+const EMPTY_AVAIL = { thursday: false, friday: false, saturday: false };
 
 export default function ModelPools() {
   const [all, setAll] = useState([]);
@@ -65,6 +72,7 @@ export default function ModelPools() {
   const [waistRange, setWaistRange] = useState(EMPTY_RANGE);
   const [dressRange, setDressRange] = useState(EMPTY_RANGE);
   const [jacketRange, setJacketRange] = useState(EMPTY_RANGE);
+  const [availFilter, setAvailFilter] = useState(EMPTY_AVAIL);
   const [detailId, setDetailId] = useState(null);
 
   useEffect(() => {
@@ -90,15 +98,19 @@ export default function ModelPools() {
       if (!inRange(parseLeadingNumber(m.waist_size), waistRange, parseLeadingNumber)) return false;
       if (!inRange(parseLeadingNumber(m.dress_size), dressRange, parseLeadingNumber)) return false;
       if (!inRange(parseLeadingNumber(m.jacket_size), jacketRange, parseLeadingNumber)) return false;
+      if (availFilter.thursday && !m.avail_thursday) return false;
+      if (availFilter.friday && !m.avail_friday) return false;
+      if (availFilter.saturday && !m.avail_saturday) return false;
       return true;
     });
-  }, [byCategory, heightRange, waistRange, dressRange, jacketRange]);
+  }, [byCategory, heightRange, waistRange, dressRange, jacketRange, availFilter]);
 
   function clearFilters() {
     setHeightRange(EMPTY_RANGE);
     setWaistRange(EMPTY_RANGE);
     setDressRange(EMPTY_RANGE);
     setJacketRange(EMPTY_RANGE);
+    setAvailFilter(EMPTY_AVAIL);
   }
 
   function handlePoolChange(applicantId, pool) {
@@ -115,7 +127,8 @@ export default function ModelPools() {
   const showJacketFilter = category === "male" || category === "non_binary";
   const isEmptyRange = (r) => !r.min && !r.max;
   const anyFilterActive =
-    !isEmptyRange(heightRange) || !isEmptyRange(waistRange) || !isEmptyRange(dressRange) || !isEmptyRange(jacketRange);
+    !isEmptyRange(heightRange) || !isEmptyRange(waistRange) || !isEmptyRange(dressRange) || !isEmptyRange(jacketRange) ||
+    Object.values(availFilter).some(Boolean);
 
   return (
     <div className="page" style={{ maxWidth: 1300 }}>
@@ -158,6 +171,7 @@ export default function ModelPools() {
         {showJacketFilter && (
           <RangeFilter label="Jacket" range={jacketRange} onChange={setJacketRange} placeholderMin="40" placeholderMax="42" />
         )}
+        <AvailabilityFilter availFilter={availFilter} onChange={setAvailFilter} />
         {anyFilterActive && (
           <button className="btn btn-outline btn-sm" onClick={clearFilters}>Clear filters</button>
         )}
@@ -257,6 +271,34 @@ function RangeFilter({ label, range, onChange, placeholderMin, placeholderMax })
   );
 }
 
+function AvailabilityFilter({ availFilter, onChange }) {
+  function toggleDay(key) {
+    onChange((prev) => ({ ...prev, [key]: !prev[key] }));
+  }
+
+  return (
+    <div style={{ display: "flex", gap: 4 }}>
+      {AVAIL_DAYS.map((d) => (
+        <button
+          key={d.key}
+          onClick={() => toggleDay(d.key)}
+          className="btn btn-sm"
+          title={`Available ${d.key[0].toUpperCase()}${d.key.slice(1)}`}
+          style={{
+            fontSize: 12,
+            padding: "6px 10px",
+            background: availFilter[d.key] ? "var(--ink)" : "var(--paper)",
+            color: availFilter[d.key] ? "#fff" : "var(--muted)",
+            border: "1.5px solid var(--line-strong)",
+          }}
+        >
+          {d.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function Stat({ label, value }) {
   return (
     <div style={{ fontSize: 10 }}>
@@ -321,6 +363,21 @@ function ModelCard({ person, category, onPoolChange, onViewDetails }) {
           <span style={{ fontSize: 8, fontWeight: 700, padding: "1px 4px", borderRadius: 3, background: person.has_agency ? "var(--yes-bg)" : "var(--line)", color: person.has_agency ? "var(--yes)" : "var(--muted)" }}>
             Agency {person.has_agency ? "Y" : "N"}
           </span>
+          {AVAIL_DAYS.map((d) => {
+            const isAvail = m[`avail_${d.key}`];
+            return (
+              <span
+                key={d.key}
+                style={{
+                  fontSize: 8, fontWeight: 700, padding: "1px 4px", borderRadius: 3,
+                  background: isAvail ? "var(--yes-bg)" : "var(--line)",
+                  color: isAvail ? "var(--yes)" : "var(--muted)",
+                }}
+              >
+                {d.label} {isAvail ? "Y" : "N"}
+              </span>
+            );
+          })}
         </div>
 
         <button className="btn btn-outline btn-sm" style={{ width: "100%", marginBottom: 5, fontSize: 10, padding: "4px 2px" }} onClick={onViewDetails}>
