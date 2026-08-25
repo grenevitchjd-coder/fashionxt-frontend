@@ -378,6 +378,9 @@ function ModelCard({ person, category, onPoolChange, onCategoryChange, onViewDet
     try {
       await api.updateContactInfo(person.id, { category: newCategory });
       onCategoryChange(person.id, newCategory);
+      alert("Success! Category changed to " + newCategory);
+    } catch (err) {
+      alert("Category change FAILED: " + err.message);
     } finally {
       setSaving(false);
     }
