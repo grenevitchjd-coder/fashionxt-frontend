@@ -21,6 +21,11 @@ const AVAIL_DAYS = [
   { key: "saturday", label: "Sa" },
 ];
 
+const STATUS_OPTIONS = [
+  { key: "yes", label: "Yes" },
+  { key: "maybe", label: "Maybe" },
+];
+
 // Parses "28", "28.5", "28 1/2\"", "30\"" etc into a plain number.
 function parseLeadingNumber(str) {
   if (str === null || str === undefined) return null;
@@ -63,6 +68,7 @@ function inRange(value, range, parseFn) {
 
 const EMPTY_RANGE = { min: "", max: "" };
 const EMPTY_AVAIL = { thursday: false, friday: false, saturday: false };
+const EMPTY_STATUS = { yes: false, maybe: false };
 
 export default function ModelPools() {
   const [all, setAll] = useState([]);
@@ -73,6 +79,7 @@ export default function ModelPools() {
   const [dressRange, setDressRange] = useState(EMPTY_RANGE);
   const [jacketRange, setJacketRange] = useState(EMPTY_RANGE);
   const [availFilter, setAvailFilter] = useState(EMPTY_AVAIL);
+  const [statusFilter, setStatusFilter] = useState(EMPTY_STATUS);
   const [detailId, setDetailId] = useState(null);
 
   useEffect(() => {
@@ -92,6 +99,7 @@ export default function ModelPools() {
   const byCategory = useMemo(() => all.filter((a) => a.category === category), [all, category]);
 
   const filtered = useMemo(() => {
+    const anyStatusSelected = statusFilter.yes || statusFilter.maybe;
     return byCategory.filter((a) => {
       const m = a.measurement || {};
       if (!inRange(parseHeightToInches(m.height), heightRange, parseHeightToInches)) return false;
@@ -101,9 +109,15 @@ export default function ModelPools() {
       if (availFilter.thursday && !m.avail_thursday) return false;
       if (availFilter.friday && !m.avail_friday) return false;
       if (availFilter.saturday && !m.avail_saturday) return false;
+      if (anyStatusSelected) {
+        const matchesStatus =
+          (statusFilter.yes && a.casting_status === "yes") ||
+          (statusFilter.maybe && a.casting_status === "maybe");
+        if (!matchesStatus) return false;
+      }
       return true;
     });
-  }, [byCategory, heightRange, waistRange, dressRange, jacketRange, availFilter]);
+  }, [byCategory, heightRange, waistRange, dressRange, jacketRange, availFilter, statusFilter]);
 
   function clearFilters() {
     setHeightRange(EMPTY_RANGE);
@@ -111,10 +125,15 @@ export default function ModelPools() {
     setDressRange(EMPTY_RANGE);
     setJacketRange(EMPTY_RANGE);
     setAvailFilter(EMPTY_AVAIL);
+    setStatusFilter(EMPTY_STATUS);
   }
 
   function handlePoolChange(applicantId, pool) {
     setAll((prev) => prev.map((a) => (a.id === applicantId ? { ...a, pool } : a)));
+  }
+
+  function handleCategoryChange(applicantId, newCategory) {
+    setAll((prev) => prev.map((a) => (a.id === applicantId ? { ...a, category: newCategory } : a)));
   }
 
   const counts = useMemo(() => {
@@ -128,7 +147,7 @@ export default function ModelPools() {
   const isEmptyRange = (r) => !r.min && !r.max;
   const anyFilterActive =
     !isEmptyRange(heightRange) || !isEmptyRange(waistRange) || !isEmptyRange(dressRange) || !isEmptyRange(jacketRange) ||
-    Object.values(availFilter).some(Boolean);
+    Object.values(availFilter).some(Boolean) || Object.values(statusFilter).some(Boolean);
 
   return (
     <div className="page" style={{ maxWidth: 1300 }}>
@@ -172,6 +191,7 @@ export default function ModelPools() {
           <RangeFilter label="Jacket" range={jacketRange} onChange={setJacketRange} placeholderMin="40" placeholderMax="42" />
         )}
         <AvailabilityFilter availFilter={availFilter} onChange={setAvailFilter} />
+        <StatusFilter statusFilter={statusFilter} onChange={setStatusFilter} />
         {anyFilterActive && (
           <button className="btn btn-outline btn-sm" onClick={clearFilters}>Clear filters</button>
         )}
@@ -191,6 +211,7 @@ export default function ModelPools() {
             person={person}
             category={category}
             onPoolChange={handlePoolChange}
+            onCategoryChange={handleCategoryChange}
             onViewDetails={() => setDetailId(person.id)}
           />
         ))}
@@ -299,6 +320,34 @@ function AvailabilityFilter({ availFilter, onChange }) {
   );
 }
 
+function StatusFilter({ statusFilter, onChange }) {
+  function toggleStatus(key) {
+    onChange((prev) => ({ ...prev, [key]: !prev[key] }));
+  }
+
+  return (
+    <div style={{ display: "flex", gap: 4 }}>
+      {STATUS_OPTIONS.map((s) => (
+        <button
+          key={s.key}
+          onClick={() => toggleStatus(s.key)}
+          className="btn btn-sm"
+          title={`Show ${s.label}`}
+          style={{
+            fontSize: 12,
+            padding: "6px 10px",
+            background: statusFilter[s.key] ? "var(--ink)" : "var(--paper)",
+            color: statusFilter[s.key] ? "#fff" : "var(--muted)",
+            border: "1.5px solid var(--line-strong)",
+          }}
+        >
+          {s.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function Stat({ label, value }) {
   return (
     <div style={{ fontSize: 10 }}>
@@ -308,7 +357,7 @@ function Stat({ label, value }) {
   );
 }
 
-function ModelCard({ person, category, onPoolChange, onViewDetails }) {
+function ModelCard({ person, category, onPoolChange, onCategoryChange, onViewDetails }) {
   const [saving, setSaving] = useState(false);
   const m = person.measurement || {};
 
@@ -318,6 +367,17 @@ function ModelCard({ person, category, onPoolChange, onViewDetails }) {
     try {
       await api.setPool(person.id, next);
       onPoolChange(person.id, next);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function changeCategory(newCategory) {
+    if (newCategory === person.category) return;
+    setSaving(true);
+    try {
+      await api.updateContactInfo(person.id, { category: newCategory });
+      onCategoryChange(person.id, newCategory);
     } finally {
       setSaving(false);
     }
@@ -351,6 +411,20 @@ function ModelCard({ person, category, onPoolChange, onViewDetails }) {
 
       <div style={{ padding: 8 }}>
         <div className="card-name" style={{ fontSize: 12, marginBottom: 4, lineHeight: 1.2 }}>{person.full_name}</div>
+
+        <select
+          value={person.category}
+          disabled={saving}
+          onChange={(e) => changeCategory(e.target.value)}
+          style={{
+            width: "100%", fontSize: 10, padding: "3px 4px", marginBottom: 6,
+            borderRadius: 4, border: "1.5px solid var(--line-strong)", background: "var(--paper)", color: "var(--ink)",
+          }}
+        >
+          {CATEGORY_TABS.map((tab) => (
+            <option key={tab.key} value={tab.key}>{tab.label}</option>
+          ))}
+        </select>
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2, marginBottom: 6 }}>
           <Stat label="H:" value={m.height} />
