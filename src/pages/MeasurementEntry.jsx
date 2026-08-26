@@ -2,6 +2,12 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate, Link, useSearchParams } from "react-router-dom";
 import { api } from "../api.js";
 
+const CATEGORY_OPTIONS = [
+  { key: "female", label: "Female" },
+  { key: "male", label: "Male" },
+  { key: "non_binary", label: "Non-binary" },
+];
+
 const TEXT_FIELDS = [
   { key: "eye_color", label: "Eye Color" },
   { key: "hair_color", label: "Hair Color" },
@@ -49,6 +55,7 @@ export default function MeasurementEntry() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [categorySaving, setCategorySaving] = useState(false);
 
   useEffect(() => {
     load();
@@ -75,6 +82,17 @@ export default function MeasurementEntry() {
     setSaved(false);
   }
 
+  async function changeCategory(newCategory) {
+    if (!applicant || newCategory === applicant.category) return;
+    setCategorySaving(true);
+    try {
+      await api.updateContactInfo(id, { category: newCategory });
+      setApplicant((a) => ({ ...a, category: newCategory }));
+    } finally {
+      setCategorySaving(false);
+    }
+  }
+
   async function handleSave(e) {
     e.preventDefault();
     setSaving(true);
@@ -96,9 +114,32 @@ export default function MeasurementEntry() {
       </Link>
       <h1 style={{ fontSize: 20, margin: "8px 0 2px" }}>{applicant.full_name}</h1>
       <p style={{ color: "var(--muted)", fontSize: 14, marginBottom: 20 }}>
-        {applicant.audition_number ? `#${String(applicant.audition_number).padStart(3, "0")} · ` : ""}
-        {applicant.category.replace("_", "-")}
+        {applicant.audition_number ? `#${String(applicant.audition_number).padStart(3, "0")}` : ""}
       </p>
+
+      <span className="field-label">Auditioning as</span>
+      <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
+        {CATEGORY_OPTIONS.map((opt) => (
+          <button
+            key={opt.key}
+            type="button"
+            onClick={() => changeCategory(opt.key)}
+            disabled={categorySaving}
+            className="btn btn-sm"
+            style={{
+              flex: 1,
+              fontSize: 13,
+              fontWeight: 600,
+              padding: "8px 10px",
+              background: applicant.category === opt.key ? "var(--ink)" : "var(--paper)",
+              color: applicant.category === opt.key ? "#fff" : "var(--muted)",
+              border: "1.5px solid var(--line-strong)",
+            }}
+          >
+            {opt.label}
+          </button>
+        ))}
+      </div>
 
       <form onSubmit={handleSave}>
         <span className="field-label">Physical details</span>
