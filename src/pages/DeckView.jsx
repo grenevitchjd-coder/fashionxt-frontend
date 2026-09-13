@@ -62,6 +62,7 @@ export default function DeckView() {
         {deck.show_day && <div style={{ color: "#aaa", fontSize: 13, marginTop: 4 }}>{deck.show_day}</div>}
         <p style={{ color: "#ccc", fontSize: 13, maxWidth: 480, margin: "10px auto 0" }}>
           Tap "Preferred 1" or "Preferred 2" on any model to mark your picks — you can change your mind anytime.
+          Tap any thumbnail below a photo to bring it up full-size.
         </p>
       </div>
 
@@ -81,16 +82,15 @@ export default function DeckView() {
 
 function ModelCard({ model, onPreference }) {
   const m = model.measurement || {};
-  const heroPhoto = model.main_photos[0] || model.extra_photos[0];
-  const otherPhotos = [...model.main_photos.slice(1), ...model.extra_photos].filter(
-    (p) => !heroPhoto || p.tag !== heroPhoto.tag
-  );
+  const allPhotos = [...model.main_photos, ...model.extra_photos];
+  const [activeIndex, setActiveIndex] = useState(0);
+  const activePhoto = allPhotos[activeIndex] || null;
 
   return (
     <div style={{ background: "#fff", borderRadius: 14, overflow: "hidden", boxShadow: "0 2px 10px rgba(0,0,0,0.08)", display: "flex", flexDirection: "column" }}>
       <div style={{ position: "relative", aspectRatio: "3/4", background: "#eee" }}>
-        {heroPhoto ? (
-          <img src={heroPhoto.url} alt={model.full_name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+        {activePhoto ? (
+          <img src={activePhoto.url} alt={model.full_name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
         ) : (
           <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "#aaa", fontSize: 13 }}>
             No photo
@@ -103,16 +103,26 @@ function ModelCard({ model, onPreference }) {
         )}
       </div>
 
-      {otherPhotos.length > 0 && (
-        <div style={{ display: "flex", gap: 4, padding: "8px 12px 0" }}>
-          {otherPhotos.slice(0, 5).map((p, i) => (
-            <img key={p.tag + i} src={p.url} alt={p.tag} style={{ width: 40, height: 40, borderRadius: 6, objectFit: "cover", flexShrink: 0 }} />
+      {allPhotos.length > 1 && (
+        <div style={{ display: "flex", gap: 4, padding: "8px 12px 0", overflowX: "auto" }}>
+          {allPhotos.map((p, i) => (
+            <img
+              key={p.tag + i}
+              src={p.url}
+              alt={p.tag}
+              onClick={() => setActiveIndex(i)}
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: 6,
+                objectFit: "cover",
+                flexShrink: 0,
+                cursor: "pointer",
+                border: i === activeIndex ? "2px solid #c9962b" : "2px solid transparent",
+                opacity: i === activeIndex ? 1 : 0.8,
+              }}
+            />
           ))}
-          {otherPhotos.length > 5 && (
-            <div style={{ width: 40, height: 40, borderRadius: 6, background: "#f2f2f2", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: "#888", flexShrink: 0 }}>
-              +{otherPhotos.length - 5}
-            </div>
-          )}
         </div>
       )}
 
