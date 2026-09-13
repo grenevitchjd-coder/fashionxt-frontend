@@ -33,6 +33,16 @@ export default function ApplicantDetail() {
   const [contactSaving, setContactSaving] = useState(false);
   const [contactSaved, setContactSaved] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [brokenPhotoIds, setBrokenPhotoIds] = useState(() => new Set());
+
+  function markPhotoBroken(id) {
+    setBrokenPhotoIds((prev) => {
+      if (prev.has(id)) return prev;
+      const next = new Set(prev);
+      next.add(id);
+      return next;
+    });
+  }
 
   useEffect(() => {
     load();
@@ -296,12 +306,14 @@ export default function ApplicantDetail() {
 
       <div className="field">
         <div className="section-header">
-          <span className="field-label" style={{ marginBottom: 0 }}>Photos ({applicant.photos.length})</span>
+          <span className="field-label" style={{ marginBottom: 0 }}>Photos ({applicant.photos.filter((p) => !brokenPhotoIds.has(p.id)).length})</span>
           <Link to={`/photo/${applicant.id}`} className="btn btn-brass btn-sm">Add photo</Link>
         </div>
-        {applicant.photos.length > 0 ? (
+        {applicant.photos.filter((p) => !brokenPhotoIds.has(p.id)).length > 0 ? (
           <div className="photo-grid">
-            {applicant.photos.map((p) => <img key={p.id} src={p.url} alt={p.tag || "model photo"} />)}
+            {applicant.photos.filter((p) => !brokenPhotoIds.has(p.id)).map((p) => (
+              <img key={p.id} src={p.url} alt={p.tag || "model photo"} onError={() => markPhotoBroken(p.id)} />
+            ))}
           </div>
         ) : (
           <p style={{ color: "var(--muted)", fontSize: 14 }}>No photos yet.</p>

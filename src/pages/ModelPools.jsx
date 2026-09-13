@@ -359,6 +359,7 @@ function Stat({ label, value }) {
 
 function ModelCard({ person, category, onPoolChange, onCategoryChange, onViewDetails }) {
   const [saving, setSaving] = useState(false);
+  const [photoBroken, setPhotoBroken] = useState(false);
   const m = person.measurement || {};
 
   async function setPool(pool) {
@@ -386,12 +387,13 @@ function ModelCard({ person, category, onPoolChange, onCategoryChange, onViewDet
   return (
     <div className="card" style={{ padding: 0, overflow: "hidden" }}>
       <div style={{ position: "relative", height: 70, background: "var(--line)" }}>
-        {person.photo_url ? (
+        {person.photo_url && !photoBroken ? (
           <img
             src={person.photo_url}
             alt={person.full_name}
             loading="lazy"
             decoding="async"
+            onError={() => setPhotoBroken(true)}
             style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
           />
         ) : (
@@ -489,6 +491,16 @@ function DetailModal({ applicantId, onClose }) {
   const [detail, setDetail] = useState(null);
   const [measurement, setMeasurement] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [brokenPhotoIds, setBrokenPhotoIds] = useState(() => new Set());
+
+  function markPhotoBroken(id) {
+    setBrokenPhotoIds((prev) => {
+      if (prev.has(id)) return prev;
+      const next = new Set(prev);
+      next.add(id);
+      return next;
+    });
+  }
 
   useEffect(() => {
     Promise.all([api.getApplicantDetail(applicantId), api.getMeasurement(applicantId)])
@@ -534,15 +546,16 @@ function DetailModal({ applicantId, onClose }) {
               <button className="btn btn-outline btn-sm" onClick={onClose}>Close</button>
             </div>
 
-            {detail.photos.length > 0 && (
+            {detail.photos.filter((p) => !brokenPhotoIds.has(p.id)).length > 0 && (
               <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 6, marginBottom: 16 }}>
-                {detail.photos.map((p) => (
+                {detail.photos.filter((p) => !brokenPhotoIds.has(p.id)).map((p) => (
                   <div key={p.id}>
                     <img
                       src={p.url}
                       alt={p.tag}
                       loading="lazy"
                       decoding="async"
+                      onError={() => markPhotoBroken(p.id)}
                       style={{ width: "100%", aspectRatio: "3/4", objectFit: "cover", borderRadius: 6 }}
                     />
                     <div style={{ fontSize: 9, color: "var(--muted)", textAlign: "center", marginTop: 2 }}>{p.tag}</div>

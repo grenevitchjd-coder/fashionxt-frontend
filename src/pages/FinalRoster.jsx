@@ -434,8 +434,11 @@ function MultiAssignPopover({ available, onAssign }) {
 function RosterRow({ person, bg, showDress, showJacket, designers, activeDesigner, onFieldSave, onMinorSave, onAgencySave, onPhoto, onAssign, onUnassign }) {
   const m = person.measurement || {};
   const fileInputRef = useRef(null);
+  const [photoBroken, setPhotoBroken] = useState(false);
   const assignedIds = new Set(person.assignments.map((a) => a.designer_id));
   const available = designers.filter((d) => !assignedIds.has(d.id));
+
+  useEffect(() => { setPhotoBroken(false); }, [person.photo_url]);
 
   const isAssignedToActive = activeDesigner ? assignedIds.has(activeDesigner.id) : false;
   const adjacentConflict = activeDesigner
@@ -450,8 +453,13 @@ function RosterRow({ person, bg, showDress, showJacket, designers, activeDesigne
           style={{ width: 26, height: 26, borderRadius: 5, overflow: "hidden", border: "none", padding: 0, cursor: "pointer", background: "var(--line)" }}
           title="Click to retake"
         >
-          {person.photo_url ? (
-            <img src={person.photo_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          {person.photo_url && !photoBroken ? (
+            <img
+              src={person.photo_url}
+              alt=""
+              onError={() => setPhotoBroken(true)}
+              style={{ width: "100%", height: "100%", objectFit: "cover" }}
+            />
           ) : (
             <span style={{ fontSize: 7, color: "var(--muted)" }}>none</span>
           )}

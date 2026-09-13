@@ -83,14 +83,32 @@ export default function DeckView() {
 function ModelCard({ model, onPreference }) {
   const m = model.measurement || {};
   const allPhotos = [...model.main_photos, ...model.extra_photos];
+  const [brokenUrls, setBrokenUrls] = useState(() => new Set());
   const [activeIndex, setActiveIndex] = useState(0);
-  const activePhoto = allPhotos[activeIndex] || null;
+
+  const workingPhotos = allPhotos.filter((p) => !brokenUrls.has(p.url));
+  const activePhoto = workingPhotos[activeIndex] || workingPhotos[0] || null;
+
+  function markBroken(url) {
+    setBrokenUrls((prev) => {
+      if (prev.has(url)) return prev;
+      const next = new Set(prev);
+      next.add(url);
+      return next;
+    });
+    setActiveIndex(0);
+  }
 
   return (
     <div style={{ background: "#fff", borderRadius: 14, overflow: "hidden", boxShadow: "0 2px 10px rgba(0,0,0,0.08)", display: "flex", flexDirection: "column" }}>
       <div style={{ position: "relative", aspectRatio: "3/4", background: "#eee" }}>
         {activePhoto ? (
-          <img src={activePhoto.url} alt={model.full_name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          <img
+            src={activePhoto.url}
+            alt={model.full_name}
+            onError={() => markBroken(activePhoto.url)}
+            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+          />
         ) : (
           <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "#aaa", fontSize: 13 }}>
             No photo
@@ -103,14 +121,15 @@ function ModelCard({ model, onPreference }) {
         )}
       </div>
 
-      {allPhotos.length > 1 && (
+      {workingPhotos.length > 1 && (
         <div style={{ display: "flex", gap: 4, padding: "8px 12px 0", overflowX: "auto" }}>
-          {allPhotos.map((p, i) => (
+          {workingPhotos.map((p, i) => (
             <img
               key={p.tag + i}
               src={p.url}
               alt={p.tag}
               onClick={() => setActiveIndex(i)}
+              onError={() => markBroken(p.url)}
               style={{
                 width: 40,
                 height: 40,
