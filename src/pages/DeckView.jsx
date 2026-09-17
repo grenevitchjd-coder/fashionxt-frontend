@@ -58,10 +58,12 @@ export default function DeckView() {
     <div style={{ fontFamily: "sans-serif", background: "#f7f5f2", minHeight: "100vh" }}>
       <div style={{ background: "#1a1a1a", color: "#fff", padding: "24px 20px", textAlign: "center" }}>
         <div style={{ fontSize: 13, letterSpacing: 1, color: "#c9962b", fontWeight: 700, marginBottom: 4 }}>FASHIONXT WEEK</div>
-        <h1 style={{ margin: 0, fontSize: 24 }}>{deck.designer_name}'s Deck</h1>
+        <h1 style={{ margin: 0, fontSize: 24 }}>{deck.designer_name}'s {deck.roster_only ? "Roster" : "Deck"}</h1>
         {deck.show_day && <div style={{ color: "#aaa", fontSize: 13, marginTop: 4 }}>{deck.show_day}</div>}
         <p style={{ color: "#ccc", fontSize: 13, maxWidth: 480, margin: "10px auto 0" }}>
-          Tap "Preferred 1" or "Preferred 2" on any model to mark your picks — you can change your mind anytime.
+          {!deck.roster_only && (
+            <>Tap "Preferred 1" or "Preferred 2" on any model to mark your picks — you can change your mind anytime.{" "}</>
+          )}
           Tap any thumbnail below a photo to bring it up full-size.
         </p>
       </div>
@@ -72,7 +74,7 @@ export default function DeckView() {
         )}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 20 }}>
           {deck.models.map((m) => (
-            <ModelCard key={m.applicant_id} model={m} onPreference={handlePreference} />
+            <ModelCard key={m.applicant_id} model={m} rosterOnly={deck.roster_only} onPreference={handlePreference} />
           ))}
         </div>
       </div>
@@ -80,7 +82,7 @@ export default function DeckView() {
   );
 }
 
-function ModelCard({ model, onPreference }) {
+function ModelCard({ model, rosterOnly, onPreference }) {
   const m = model.measurement || {};
   const allPhotos = [...model.main_photos, ...model.extra_photos];
   const [brokenUrls, setBrokenUrls] = useState(() => new Set());
@@ -166,30 +168,32 @@ function ModelCard({ model, onPreference }) {
           </div>
         )}
 
-        <div style={{ display: "flex", gap: 6, marginTop: "auto" }}>
-          <button
-            onClick={() => onPreference(model.applicant_id, "one")}
-            style={{
-              flex: 1, padding: "9px 0", borderRadius: 8, fontSize: 12.5, fontWeight: 700, cursor: "pointer",
-              border: model.preference === "one" ? "2px solid #2e7d32" : "1.5px solid #ddd",
-              background: model.preference === "one" ? "#2e7d32" : "#fff",
-              color: model.preference === "one" ? "#fff" : "#333",
-            }}
-          >
-            ★ Preferred 1
-          </button>
-          <button
-            onClick={() => onPreference(model.applicant_id, "two")}
-            style={{
-              flex: 1, padding: "9px 0", borderRadius: 8, fontSize: 12.5, fontWeight: 700, cursor: "pointer",
-              border: model.preference === "two" ? "2px solid #c9962b" : "1.5px solid #ddd",
-              background: model.preference === "two" ? "#c9962b" : "#fff",
-              color: model.preference === "two" ? "#fff" : "#333",
-            }}
-          >
-            Preferred 2
-          </button>
-        </div>
+        {!rosterOnly && (
+          <div style={{ display: "flex", gap: 6, marginTop: "auto" }}>
+            <button
+              onClick={() => onPreference(model.applicant_id, "one")}
+              style={{
+                flex: 1, padding: "9px 0", borderRadius: 8, fontSize: 12.5, fontWeight: 700, cursor: "pointer",
+                border: model.preference === "one" ? "2px solid #2e7d32" : "1.5px solid #ddd",
+                background: model.preference === "one" ? "#2e7d32" : "#fff",
+                color: model.preference === "one" ? "#fff" : "#333",
+              }}
+            >
+              ★ Preferred 1
+            </button>
+            <button
+              onClick={() => onPreference(model.applicant_id, "two")}
+              style={{
+                flex: 1, padding: "9px 0", borderRadius: 8, fontSize: 12.5, fontWeight: 700, cursor: "pointer",
+                border: model.preference === "two" ? "2px solid #c9962b" : "1.5px solid #ddd",
+                background: model.preference === "two" ? "#c9962b" : "#fff",
+                color: model.preference === "two" ? "#fff" : "#333",
+              }}
+            >
+              Preferred 2
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
