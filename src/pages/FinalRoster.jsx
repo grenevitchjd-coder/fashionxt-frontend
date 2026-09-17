@@ -125,12 +125,6 @@ export default function FinalRoster() {
     await loadAll();
   }
 
-  async function handleToggleRosterOnly(designer) {
-    const next = !designer.roster_only;
-    await api.setDesignerRosterOnly(designer.id, next);
-    setDesigners((prev) => prev.map((d) => (d.id === designer.id ? { ...d, roster_only: next } : d)));
-  }
-
   const byCategory = useMemo(() => roster.filter((p) => p.category === category), [roster, category]);
 
   const filtered = useMemo(() => {
@@ -215,27 +209,6 @@ export default function FinalRoster() {
           <span style={{ color: "var(--muted)", fontSize: 13 }}>No designers set up for {dayObj?.name} yet — add some on the Designers page.</span>
         )}
       </div>
-
-      {activeDesigner && (
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
-          <button
-            onClick={() => handleToggleRosterOnly(activeDesigner)}
-            className="btn btn-sm"
-            style={
-              activeDesigner.roster_only
-                ? { background: "var(--ink)", color: "#fff" }
-                : { background: "var(--paper)", color: "var(--muted)", border: "1.5px solid var(--line-strong)" }
-            }
-          >
-            {activeDesigner.roster_only ? "✓ Roster only — picks hidden" : "Make roster only (hide picks)"}
-          </button>
-          <span style={{ fontSize: 12, color: "var(--muted)" }}>
-            {activeDesigner.roster_only
-              ? "Their deck link shows just the lineup — no Preferred 1/2 buttons."
-              : "Their deck link lets them mark Preferred 1 / Preferred 2."}
-          </span>
-        </div>
-      )}
 
       <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
         {CATEGORY_TABS.map((tab) => (

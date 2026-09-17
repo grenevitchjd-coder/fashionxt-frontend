@@ -57,6 +57,12 @@ export default function Designers() {
     await loadAll();
   }
 
+  async function handleToggleRosterOnly(designer) {
+    const next = !designer.roster_only;
+    await api.setDesignerRosterOnly(designer.id, next);
+    setDesigners((prev) => prev.map((d) => (d.id === designer.id ? { ...d, roster_only: next } : d)));
+  }
+
   async function handleMoveDesigner(index, direction) {
     const newOrder = [...designers];
     const swapIndex = index + direction;
@@ -168,6 +174,7 @@ export default function Designers() {
           onToggle={() => toggleExpanded(d.id)}
           onMoveDesigner={handleMoveDesigner}
           onRemove={handleRemove}
+          onToggleRosterOnly={handleToggleRosterOnly}
           onMoveDay={handleMoveDay}
           onAddModel={handleAddModel}
           onRemoveModel={handleRemoveModel}
@@ -180,7 +187,7 @@ export default function Designers() {
 
 function DesignerRow({
   designer, index, total, showDays, currentDayId, pool,
-  expanded, onToggle, onMoveDesigner, onRemove, onMoveDay,
+  expanded, onToggle, onMoveDesigner, onRemove, onMoveDay, onToggleRosterOnly,
   onAddModel, onRemoveModel, onMoveModel,
 }) {
   const [linkCopied, setLinkCopied] = useState(false);
@@ -221,6 +228,38 @@ function DesignerRow({
         >
           {designer.order_in_day}
         </div>
+
+        <label
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: 2,
+            width: 40,
+            flexShrink: 0,
+            cursor: "pointer",
+            fontSize: 9,
+            fontWeight: 700,
+            textTransform: "uppercase",
+            letterSpacing: 0.3,
+            lineHeight: 1.15,
+            textAlign: "center",
+            color: designer.roster_only ? "var(--ink)" : "var(--muted)",
+          }}
+          title={
+            designer.roster_only
+              ? "Roster only — Preferred 1/2 hidden on their deck link"
+              : "Check to hide Preferred 1/2 on their deck link"
+          }
+        >
+          <input
+            type="checkbox"
+            checked={!!designer.roster_only}
+            onChange={() => onToggleRosterOnly(designer)}
+            style={{ margin: 0 }}
+          />
+          <span>Final<br />Roster</span>
+        </label>
 
         <div className="card-main">
           <div className="card-name">{designer.name}</div>
