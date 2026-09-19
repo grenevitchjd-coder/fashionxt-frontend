@@ -55,6 +55,9 @@ export const api = {
   setDesignerRosterOnly: (designerId, rosterOnly) =>
     request(`/designers/${designerId}/roster-only`, { method: "PUT", body: JSON.stringify({ roster_only: rosterOnly }) }),
 
+  setDesignerNotes: (designerId, notes) =>
+    request(`/designers/${designerId}/notes`, { method: "PUT", body: JSON.stringify({ notes }) }),
+
   reorderDesigners: (orderedIds) =>
     request(`/designers/reorder`, { method: "PUT", body: JSON.stringify({ ordered_ids: orderedIds }) }),
 

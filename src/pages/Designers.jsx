@@ -63,6 +63,11 @@ export default function Designers() {
     setDesigners((prev) => prev.map((d) => (d.id === designer.id ? { ...d, roster_only: next } : d)));
   }
 
+  async function handleUpdateNotes(designer, notes) {
+    const saved = await api.setDesignerNotes(designer.id, notes);
+    setDesigners((prev) => prev.map((d) => (d.id === designer.id ? { ...d, notes: saved.notes } : d)));
+  }
+
   async function handleMoveDesigner(index, direction) {
     const newOrder = [...designers];
     const swapIndex = index + direction;
@@ -175,6 +180,7 @@ export default function Designers() {
           onMoveDesigner={handleMoveDesigner}
           onRemove={handleRemove}
           onToggleRosterOnly={handleToggleRosterOnly}
+          onUpdateNotes={handleUpdateNotes}
           onMoveDay={handleMoveDay}
           onAddModel={handleAddModel}
           onRemoveModel={handleRemoveModel}
@@ -187,10 +193,13 @@ export default function Designers() {
 
 function DesignerRow({
   designer, index, total, showDays, currentDayId, pool,
-  expanded, onToggle, onMoveDesigner, onRemove, onMoveDay, onToggleRosterOnly,
+  expanded, onToggle, onMoveDesigner, onRemove, onMoveDay, onToggleRosterOnly, onUpdateNotes,
   onAddModel, onRemoveModel, onMoveModel,
 }) {
   const [linkCopied, setLinkCopied] = useState(false);
+  const [notesOpen, setNotesOpen] = useState(false);
+  const [notesDraft, setNotesDraft] = useState(designer.notes || "");
+  const [notesSaving, setNotesSaving] = useState(false);
 
   function handleCopyLink() {
     const url = `${window.location.origin}/deck/${designer.share_token}`;
@@ -198,6 +207,26 @@ function DesignerRow({
       setLinkCopied(true);
       setTimeout(() => setLinkCopied(false), 2000);
     });
+  }
+
+  function openNotes() {
+    setNotesDraft(designer.notes || "");
+    setNotesOpen(true);
+  }
+
+  async function handleSaveNotes() {
+    setNotesSaving(true);
+    try {
+      await onUpdateNotes(designer, notesDraft.trim());
+      setNotesOpen(false);
+    } finally {
+      setNotesSaving(false);
+    }
+  }
+
+  function handleCancelNotes() {
+    setNotesDraft(designer.notes || "");
+    setNotesOpen(false);
   }
 
   return (
@@ -265,10 +294,16 @@ function DesignerRow({
           <div className="card-name">{designer.name}</div>
           <div className="card-meta">
             {designer.models.length} model{designer.models.length === 1 ? "" : "s"} assigned
-            {designer.notes ? ` · ${designer.notes}` : ""}
           </div>
         </div>
 
+        <button
+          className="btn btn-outline btn-sm"
+          onClick={openNotes}
+          style={designer.notes ? { borderColor: "var(--brass)", color: "var(--brass)" } : undefined}
+        >
+          {designer.notes ? "Notes ●" : "+ Notes"}
+        </button>
         <button className="btn btn-outline btn-sm" onClick={onToggle}>
           {expanded ? "Hide lineup" : "Edit lineup"}
         </button>
@@ -293,6 +328,31 @@ function DesignerRow({
           Remove
         </button>
       </div>
+
+      {notesOpen && (
+        <div style={{ marginTop: 10, paddingTop: 10, borderTop: "1px solid var(--line)" }}>
+          <span className="field-label">Notes for {designer.name} (staff only — never shown on their deck link)</span>
+          <textarea
+            autoFocus
+            value={notesDraft}
+            onChange={(e) => setNotesDraft(e.target.value)}
+            placeholder="e.g. wants tallest models first, prefers no swimwear looks…"
+            rows={3}
+            style={{
+              width: "100%", padding: "8px 10px", borderRadius: 8, border: "1.5px solid var(--line-strong)",
+              fontSize: 14, boxSizing: "border-box", fontFamily: "inherit", resize: "vertical",
+            }}
+          />
+          <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+            <button className="btn btn-brass btn-sm" onClick={handleSaveNotes} disabled={notesSaving}>
+              {notesSaving ? "Saving…" : "Save notes"}
+            </button>
+            <button className="btn btn-outline btn-sm" onClick={handleCancelNotes} disabled={notesSaving}>
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
 
       {expanded && (
         <div style={{ marginTop: 10, paddingTop: 10, borderTop: "1px solid var(--line)" }}>
