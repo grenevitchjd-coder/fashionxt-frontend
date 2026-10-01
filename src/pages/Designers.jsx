@@ -70,6 +70,13 @@ export default function Designers() {
     setDesigners((prev) => prev.map((d) => (d.id === designer.id ? { ...d, notes: saved.notes } : d)));
   }
 
+  async function handleUpdateWalkthrough(designer, time) {
+    const saved = await api.setDesignerWalkthroughTime(designer.id, time || null);
+    setDesigners((prev) => prev.map((d) => (
+      d.id === designer.id ? { ...d, walkthrough_time: saved.walkthrough_time, walkthrough: saved.walkthrough } : d
+    )));
+  }
+
   async function handleMoveDesigner(index, direction) {
     const newOrder = [...designers];
     const swapIndex = index + direction;
@@ -212,6 +219,7 @@ export default function Designers() {
           onRemove={handleRemove}
           onToggleRosterOnly={handleToggleRosterOnly}
           onUpdateNotes={handleUpdateNotes}
+          onUpdateWalkthrough={handleUpdateWalkthrough}
           onMoveDay={handleMoveDay}
           onAddModel={handleAddModel}
           onRemoveModel={handleRemoveModel}
@@ -224,13 +232,25 @@ export default function Designers() {
 
 function DesignerRow({
   designer, index, total, showDays, currentDayId, pool,
-  expanded, onToggle, onMoveDesigner, onRemove, onMoveDay, onToggleRosterOnly, onUpdateNotes,
+  expanded, onToggle, onMoveDesigner, onRemove, onMoveDay, onToggleRosterOnly, onUpdateNotes, onUpdateWalkthrough,
   onAddModel, onRemoveModel, onMoveModel,
 }) {
   const [linkCopied, setLinkCopied] = useState(false);
   const [notesOpen, setNotesOpen] = useState(false);
   const [notesDraft, setNotesDraft] = useState(designer.notes || "");
   const [notesSaving, setNotesSaving] = useState(false);
+  const [walkSaving, setWalkSaving] = useState(false);
+
+  async function saveWalk(value) {
+    setWalkSaving(true);
+    try {
+      await onUpdateWalkthrough(designer, value);
+    } catch (e) {
+      alert("Couldn't save the walk-through time. Please try again.");
+    } finally {
+      setWalkSaving(false);
+    }
+  }
 
   function handleCopyLink() {
     const url = `${window.location.origin}/deck/${designer.share_token}`;
@@ -325,6 +345,30 @@ function DesignerRow({
           <div className="card-name">{designer.name}</div>
           <div className="card-meta">
             {designer.models.length} model{designer.models.length === 1 ? "" : "s"} assigned
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4, flexWrap: "wrap" }}>
+            <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.3, color: "var(--muted)" }}>
+              Walk-through
+            </span>
+            <input
+              type="time"
+              value={designer.walkthrough_time || ""}
+              disabled={walkSaving}
+              onChange={(e) => saveWalk(e.target.value)}
+              aria-label={`Walk-through time for ${designer.name}`}
+              style={{ fontSize: 13, padding: "2px 6px", border: "1px solid var(--line-strong)", borderRadius: 6, background: "var(--paper)" }}
+            />
+            {designer.walkthrough_time ? (
+              <button
+                className="btn btn-outline btn-sm"
+                style={{ padding: "0 8px", lineHeight: "20px" }}
+                disabled={walkSaving}
+                onClick={() => saveWalk("")}
+                aria-label="Clear walk-through time"
+              >✕</button>
+            ) : (
+              <span style={{ fontSize: 12, color: "var(--muted)", fontWeight: 600 }}>TBD</span>
+            )}
           </div>
         </div>
 

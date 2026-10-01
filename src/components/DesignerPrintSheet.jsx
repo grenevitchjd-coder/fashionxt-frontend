@@ -64,6 +64,8 @@ export default function DesignerPrintSheet({ day, designers, variant, onClose })
         .print-designer-head { display: flex; align-items: baseline; gap: 10px; border-bottom: 1px solid #999; padding-bottom: 6px; margin-bottom: 8px; }
         .print-designer-num { font-size: 13px; font-weight: 700; border: 1.5px solid #000; border-radius: 50%; width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
         .print-designer-name { font-size: 18px; font-weight: 700; }
+        .print-designer-walk { font-size: 12px; color: #444; }
+        .print-designer-walk b { font-size: 14px; color: #000; }
         .print-designer-count { margin-left: auto; font-size: 12px; color: #444; }
         .print-notes { font-size: 13px; border-left: 3px solid #000; padding: 4px 10px; margin: 0 0 10px; white-space: pre-wrap; background: #f3f3f3; }
         .print-notes b { display: block; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
@@ -115,6 +117,7 @@ export default function DesignerPrintSheet({ day, designers, variant, onClose })
             <div className="print-designer-head">
               <span className="print-designer-num">{d.order_in_day}</span>
               <span className="print-designer-name">{d.name}</span>
+              <span className="print-designer-walk">Walk-through <b>{d.walkthrough || "TBD"}</b></span>
               <span className="print-designer-count">
                 {d.models.length} model{d.models.length === 1 ? "" : "s"}
               </span>

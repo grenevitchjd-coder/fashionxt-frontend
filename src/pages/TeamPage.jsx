@@ -79,7 +79,7 @@ function PhotoViewer({ model, onClose }) {
         <div style={{ fontSize: 24, fontWeight: 700 }}>{model.full_name}</div>
         {model.other_designers.length > 0 && (
           <div style={{ fontSize: 14, marginTop: 4, color: "#e8d3a8" }}>
-            Also walking for: {model.other_designers.map((x) => `${x.order_in_day}. ${x.name}`).join("  ·  ")}
+            Also walking for: {model.other_designers.map((x) => `${x.order_in_day}. ${x.name} (${x.walkthrough || "TBD"})`).join("  ·  ")}
           </div>
         )}
         {model.note && <div style={{ fontSize: 14, marginTop: 4, color: "#ffd98a" }}>📝 {model.note}</div>}
@@ -322,6 +322,7 @@ export default function TeamPage({ team, title, path }) {
               <div style={{ fontSize: 20, fontWeight: 700 }}>{current.name}</div>
               <div style={{ fontSize: 12, color: "var(--muted)" }}>
                 {current.models.length} model{current.models.length === 1 ? "" : "s"} · {progressCount} in progress · {doneCount} done
+                {" · "}Walk-through <b style={{ color: current.walkthrough ? "var(--brass-dark)" : undefined }}>{current.walkthrough || "TBD"}</b>
                 {current.custom_order && " · your team's custom order"}
               </div>
             </div>
@@ -390,7 +391,7 @@ export default function TeamPage({ team, title, path }) {
                   </div>
                   {m.other_designers.length > 0 && (
                     <div style={{ fontSize: 12, fontWeight: 600, color: "var(--brass-dark)", marginTop: 4 }}>
-                      Also walking for: {m.other_designers.map((x) => `${x.order_in_day}. ${x.name}`).join("  ·  ")}
+                      Also walking for: {m.other_designers.map((x) => `${x.order_in_day}. ${x.name} (${x.walkthrough || "TBD"})`).join("  ·  ")}
                     </div>
                   )}
                   {m.note && <div style={{ fontSize: 12, color: "var(--maybe)", marginTop: 2 }}>📝 {m.note}</div>}

@@ -195,7 +195,7 @@ export default function DayOfCheckIn() {
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontWeight: 600, fontSize: 16 }}>{m.full_name}</div>
             <div style={{ fontSize: 12, color: "var(--muted)" }}>
-              {m.designers.map((d) => `${d.order_in_day}. ${d.name}`).join("  ·  ")}
+              {m.designers.map((d) => `${d.order_in_day}. ${d.name} (${d.walkthrough || "TBD"})`).join("  ·  ")}
             </div>
             {m.note && <div style={{ fontSize: 12, color: "var(--maybe)", marginTop: 2 }}>📝 {m.note}</div>}
           </div>
@@ -211,7 +211,7 @@ export default function DayOfCheckIn() {
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontWeight: 600, fontSize: 16 }}>{row.name}</div>
           <div style={{ fontSize: 12, color: "var(--muted)" }}>
-            {isDesigner ? `Designer #${row.order_in_day} · ${row.model_count} model${row.model_count === 1 ? "" : "s"}` : row.attendee_type}
+            {isDesigner ? `Designer #${row.order_in_day} · ${row.model_count} model${row.model_count === 1 ? "" : "s"} · Walk-through ${row.walkthrough || "TBD"}` : row.attendee_type}
           </div>
         </div>
         <CheckedPill at={row.checked_in_at} />
@@ -323,7 +323,10 @@ export default function DayOfCheckIn() {
                     width: 28, height: 28, borderRadius: "50%", background: "var(--brass)", color: "#fff",
                     display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 14, flexShrink: 0,
                   }}>{d.order_in_day}</span>
-                  <span style={{ fontSize: 18, fontWeight: 600 }}>{d.name}</span>
+                  <span style={{ fontSize: 18, fontWeight: 600, flex: 1 }}>{d.name}</span>
+                  <span style={{ fontSize: 14, fontWeight: 700, color: d.walkthrough ? "var(--brass-dark)" : "var(--muted)" }}>
+                    Walk-through {d.walkthrough || "TBD"}
+                  </span>
                 </div>
               ))}
             </div>

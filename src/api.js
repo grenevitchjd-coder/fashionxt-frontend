@@ -58,6 +58,10 @@ export const api = {
   setDesignerNotes: (designerId, notes) =>
     request(`/designers/${designerId}/notes`, { method: "PUT", body: JSON.stringify({ notes }) }),
 
+  // time = "14:30" (24h) or null to clear
+  setDesignerWalkthroughTime: (designerId, time) =>
+    request(`/designers/${designerId}/walkthrough-time`, { method: "PUT", body: JSON.stringify({ time }) }),
+
   reorderDesigners: (orderedIds) =>
     request(`/designers/reorder`, { method: "PUT", body: JSON.stringify({ ordered_ids: orderedIds }) }),
 
