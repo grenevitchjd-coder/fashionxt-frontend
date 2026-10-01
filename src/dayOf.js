@@ -3,7 +3,7 @@
 // Every Day of Show page, in the order they appear on the hub and in the page menu.
 // Flip `built` to true as each page goes live.
 export const DAY_OF_PAGES = [
-  { path: "/day-of/check-in", label: "Check-In", built: false, accent: "var(--brass)" },
+  { path: "/day-of/check-in", label: "Check-In", built: true, accent: "var(--brass)" },
   { path: "/day-of/non-model", label: "Non-Model Check-In Additions", built: true, accent: "var(--navy)" },
   { path: "/day-of/headshots", label: "Print Headshots", built: false, accent: "var(--yes)" },
   { path: "/day-of/hair", label: "Hair Team", built: false, accent: "var(--maybe)" },

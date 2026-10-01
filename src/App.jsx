@@ -20,6 +20,7 @@ import ManualAdd from "./pages/ManualAdd.jsx";
 import DeckView from "./pages/DeckView.jsx";
 import DayOfHub from "./pages/DayOfHub.jsx";
 import NonModelAdditions from "./pages/NonModelAdditions.jsx";
+import DayOfCheckIn from "./pages/DayOfCheckIn.jsx";
 
 function StaffLayout({ children, guarded }) {
   return (
@@ -49,6 +50,7 @@ export default function App() {
 
         {/* Day of Show — hub and most stations are open; Non-Model Additions needs the password */}
         <Route path="/day-of" element={<StaffLayout><DayOfHub /></StaffLayout>} />
+        <Route path="/day-of/check-in" element={<StaffLayout><DayOfCheckIn /></StaffLayout>} />
         <Route path="/day-of/non-model" element={<StaffLayout guarded><NonModelAdditions /></StaffLayout>} />
 
         {/* Audition-day stations — no password, needs to be instant */}
