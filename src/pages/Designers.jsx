@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "../api.js";
+import DesignerPrintSheet from "../components/DesignerPrintSheet.jsx";
 
 export default function Designers() {
   const [showDays, setShowDays] = useState([]);
@@ -11,6 +12,7 @@ export default function Designers() {
   const [newNotes, setNewNotes] = useState("");
   const [adding, setAdding] = useState(false);
   const [expandedIds, setExpandedIds] = useState(new Set());
+  const [printVariant, setPrintVariant] = useState(null); // null | "staff" | "designer"
 
   useEffect(() => {
     loadDays();
@@ -112,6 +114,18 @@ export default function Designers() {
 
   const dayObj = showDays.find((d) => d.id === selectedDay);
 
+  // Print view replaces the page while open (so it works in the same tab, no re-login).
+  if (printVariant) {
+    return (
+      <DesignerPrintSheet
+        day={dayObj}
+        designers={designers}
+        variant={printVariant}
+        onClose={() => setPrintVariant(null)}
+      />
+    );
+  }
+
   return (
     <div className="page" style={{ maxWidth: 900 }}>
       <h1 style={{ fontSize: 20, marginBottom: 4 }}>Designers</h1>
@@ -120,7 +134,7 @@ export default function Designers() {
         You can have multiple designers' lineups open at once to compare who's walking when.
       </p>
 
-      <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
+      <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap", alignItems: "center" }}>
         {showDays.map((d) => (
           <button
             key={d.id}
@@ -135,6 +149,23 @@ export default function Designers() {
             {d.name}
           </button>
         ))}
+        <span style={{ flex: 1 }} />
+        <button
+          className="btn btn-outline btn-sm"
+          disabled={loading || !dayObj}
+          onClick={() => setPrintVariant("staff")}
+          title="Printable lineup for this day, including designer notes"
+        >
+          Print {dayObj?.name} — Staff (with notes)
+        </button>
+        <button
+          className="btn btn-outline btn-sm"
+          disabled={loading || !dayObj}
+          onClick={() => setPrintVariant("designer")}
+          title="Printable lineup for this day, without designer notes"
+        >
+          Print {dayObj?.name} — Designer (no notes)
+        </button>
       </div>
 
       <form onSubmit={handleAdd} className="card" style={{ marginBottom: 20 }}>
