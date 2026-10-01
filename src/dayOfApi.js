@@ -50,6 +50,12 @@ export const dayOfApi = {
   resetTeamOrder: (team, designerId) =>
     request(`/day-of/teams/${team}/order?designer_id=${designerId}`, { method: "DELETE" }),
 
+  // ---- Model Tracking ----
+  getTracking: (showDayId) => request(`/day-of/tracking?show_day_id=${showDayId}`),
+
+  setRehearsal: (applicantId, designerId, attended) =>
+    post(`/day-of/tracking/rehearsal`, { applicant_id: applicantId, designer_id: designerId, attended }),
+
   // ---- Print Headshots ----
   getHeadshotModels: () => request(`/day-of/headshots/models`),
 };

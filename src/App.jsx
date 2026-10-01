@@ -23,6 +23,7 @@ import NonModelAdditions from "./pages/NonModelAdditions.jsx";
 import DayOfCheckIn from "./pages/DayOfCheckIn.jsx";
 import Headshots from "./pages/Headshots.jsx";
 import HairTeam from "./pages/HairTeam.jsx";
+import ModelTracking from "./pages/ModelTracking.jsx";
 import MakeUpTeam from "./pages/MakeUpTeam.jsx";
 
 function StaffLayout({ children, guarded }) {
@@ -57,6 +58,7 @@ export default function App() {
         <Route path="/day-of/headshots" element={<StaffLayout><Headshots /></StaffLayout>} />
         <Route path="/day-of/hair" element={<StaffLayout><HairTeam /></StaffLayout>} />
         <Route path="/day-of/makeup" element={<StaffLayout><MakeUpTeam /></StaffLayout>} />
+        <Route path="/day-of/tracking" element={<StaffLayout><ModelTracking /></StaffLayout>} />
         <Route path="/day-of/non-model" element={<StaffLayout guarded><NonModelAdditions /></StaffLayout>} />
 
         {/* Audition-day stations — no password, needs to be instant */}

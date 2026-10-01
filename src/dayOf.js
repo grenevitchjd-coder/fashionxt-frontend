@@ -8,6 +8,7 @@ export const DAY_OF_PAGES = [
   { path: "/day-of/headshots", label: "Print Headshots", built: true, accent: "var(--yes)" },
   { path: "/day-of/hair", label: "Hair Team", built: true, accent: "var(--maybe)" },
   { path: "/day-of/makeup", label: "Make Up Team", built: true, accent: "var(--brass)" },
+  { path: "/day-of/tracking", label: "Model Tracking", built: true, accent: "var(--navy)" },
 ];
 
 // Today's date in Portland time, as YYYY-MM-DD (so the default day is right
