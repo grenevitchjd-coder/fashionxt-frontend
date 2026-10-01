@@ -23,7 +23,7 @@ function initials(name) {
   return (name || "?").split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join("");
 }
 
-function Headshot({ url, name, size = 64 }) {
+function Headshot({ url, name, size = 64, onClick }) {
   const [failed, setFailed] = useState(false);
   const box = { width: size, height: size, borderRadius: 8, flexShrink: 0, objectFit: "cover", background: "var(--line)", border: "1px solid var(--line-strong)" };
   if (!url || failed) {
@@ -33,7 +33,58 @@ function Headshot({ url, name, size = 64 }) {
       </div>
     );
   }
-  return <img src={url} alt="" style={box} onError={() => setFailed(true)} />;
+  return (
+    <img
+      src={url}
+      alt={name}
+      style={{ ...box, cursor: onClick ? "zoom-in" : undefined }}
+      onClick={onClick}
+      onError={() => setFailed(true)}
+    />
+  );
+}
+
+// Full-size photo view: tap anywhere (or the ✕) to close.
+function PhotoViewer({ model, onClose }) {
+  const [failed, setFailed] = useState(false);
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+  return (
+    <div
+      onClick={onClose}
+      style={{ position: "fixed", inset: 0, background: "rgba(10,10,14,0.88)", zIndex: 60, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 16, gap: 12 }}
+    >
+      <button
+        onClick={onClose}
+        aria-label="Close photo"
+        style={{ position: "absolute", top: 12, right: 12, width: 44, height: 44, borderRadius: "50%", border: "none", background: "#fff", fontSize: 22, cursor: "pointer" }}
+      >✕</button>
+      {failed ? (
+        <div style={{ width: 280, height: 350, background: "var(--line)", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 64, fontWeight: 700, color: "var(--muted)" }}>
+          {initials(model.full_name)}
+        </div>
+      ) : (
+        <img
+          src={model.photo_url}
+          alt={model.full_name}
+          onError={() => setFailed(true)}
+          style={{ maxWidth: "94vw", maxHeight: "74vh", objectFit: "contain", borderRadius: 10, background: "#000" }}
+        />
+      )}
+      <div style={{ color: "#fff", textAlign: "center" }}>
+        <div style={{ fontSize: 24, fontWeight: 700 }}>{model.full_name}</div>
+        {model.other_designers.length > 0 && (
+          <div style={{ fontSize: 14, marginTop: 4, color: "#e8d3a8" }}>
+            Also walking for: {model.other_designers.map((x) => `${x.order_in_day}. ${x.name}`).join("  ·  ")}
+          </div>
+        )}
+        {model.note && <div style={{ fontSize: 14, marginTop: 4, color: "#ffd98a" }}>📝 {model.note}</div>}
+      </div>
+    </div>
+  );
 }
 
 function Chip({ active, onClick, children }) {
@@ -82,6 +133,7 @@ export default function TeamPage({ team, title, path }) {
   const [busy, setBusy] = useState(false);
   const [localOrder, setLocalOrder] = useState(null); // applicant ids while dragging
   const [dragId, setDragId] = useState(null);
+  const [zoomId, setZoomId] = useState(null); // applicant id whose photo is open full-size
 
   const dayRef = useRef(null);
   const pausedRef = useRef(false);
@@ -321,7 +373,7 @@ export default function TeamPage({ team, title, path }) {
                   </div>
                 )}
                 <span style={{ width: 22, textAlign: "right", fontWeight: 700, color: "var(--brass-dark)" }}>{position}</span>
-                <Headshot url={m.photo_url} name={m.full_name} />
+                <Headshot url={m.photo_url} name={m.full_name} onClick={m.photo_url ? () => setZoomId(m.applicant_id) : undefined} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 600, fontSize: 17 }}>{m.full_name}</div>
                   <div style={{ marginTop: 2 }}>
@@ -357,6 +409,8 @@ export default function TeamPage({ team, title, path }) {
           })}
         </>
       )}
+
+      {zoomId !== null && byId[zoomId] && <PhotoViewer model={byId[zoomId]} onClose={() => setZoomId(null)} />}
     </div>
   );
 }
