@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import { api } from "../api.js";
 import { dayOfApi, dayOfPrintUrls } from "../dayOfApi.js";
 import DayOfNav from "../components/DayOfNav.jsx";
@@ -157,15 +157,15 @@ export default function DayOfCheckIn() {
   const items = [];
   if (roster) {
     roster.models.forEach((m) => items.push({
-      kind: "models", key: `m${m.applicant_id}`, name: m.full_name, at: m.checked_in_at, model: m,
+      kind: "models", rank: 0, group: "Models", key: `m${m.applicant_id}`, name: m.full_name, at: m.checked_in_at, model: m,
       searchText: `${m.full_name} ${m.designers.map((d) => d.name).join(" ")}`.toLowerCase(),
     }));
     roster.designers.forEach((d) => items.push({
-      kind: "designers", key: `d${d.id}`, name: d.name, at: d.checked_in_at, designer: d,
+      kind: "designers", rank: 1, group: "Designers", key: `d${d.id}`, name: d.name, at: d.checked_in_at, designer: d,
       searchText: d.name.toLowerCase(),
     }));
     roster.staff.forEach((s) => items.push({
-      kind: "staff", key: `s${s.id}`, name: s.name, at: s.checked_in_at, staff: s,
+      kind: "staff", rank: 2, group: s.attendee_type, key: `s${s.id}`, name: s.name, at: s.checked_in_at, staff: s,
       searchText: `${s.name} ${s.attendee_type}`.toLowerCase(),
     }));
   }
@@ -173,13 +173,58 @@ export default function DayOfCheckIn() {
     .filter((i) => typeFilter === "all" || i.kind === typeFilter)
     .filter((i) => statusFilter === "all" || (statusFilter === "in" ? !!i.at : !i.at))
     .filter((i) => !q || i.searchText.includes(q))
-    .sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()));
+    .sort((a, b) =>
+      a.rank - b.rank ||
+      a.group.toLowerCase().localeCompare(b.group.toLowerCase()) ||
+      a.name.toLowerCase().localeCompare(b.name.toLowerCase())
+    );
 
   const modelsIn = roster ? roster.models.filter((m) => m.checked_in_at).length : 0;
   const designersIn = roster ? roster.designers.filter((d) => d.checked_in_at).length : 0;
   const dayObj = showDays.find((d) => d.id === dayId);
 
   const printBtn = { textDecoration: "none" };
+
+  function renderItem(i) {
+    if (i.kind === "models") {
+      const m = i.model;
+      return (
+        <div key={i.key} className="card" onClick={() => setOpenModelId(m.applicant_id)}
+          style={{ display: "flex", gap: 12, alignItems: "center", cursor: "pointer", opacity: m.checked_in_at ? 0.7 : 1 }}>
+          <Avatar url={m.photo_url} name={m.full_name} />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontWeight: 600, fontSize: 16 }}>{m.full_name}</div>
+            <div style={{ fontSize: 12, color: "var(--muted)" }}>
+              {m.designers.map((d) => `${d.order_in_day}. ${d.name}`).join("  ·  ")}
+            </div>
+            {m.note && <div style={{ fontSize: 12, color: "var(--maybe)", marginTop: 2 }}>📝 {m.note}</div>}
+          </div>
+          <span style={{ fontSize: 11, color: "var(--muted)", textTransform: "uppercase" }}>Model</span>
+          <CheckedPill at={m.checked_in_at} />
+        </div>
+      );
+    }
+    const isDesigner = i.kind === "designers";
+    const row = isDesigner ? i.designer : i.staff;
+    return (
+      <div key={i.key} className="card" style={{ display: "flex", gap: 12, alignItems: "center", opacity: row.checked_in_at ? 0.7 : 1 }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontWeight: 600, fontSize: 16 }}>{row.name}</div>
+          <div style={{ fontSize: 12, color: "var(--muted)" }}>
+            {isDesigner ? `Designer #${row.order_in_day} · ${row.model_count} model${row.model_count === 1 ? "" : "s"}` : row.attendee_type}
+          </div>
+        </div>
+        <CheckedPill at={row.checked_in_at} />
+        <button
+          className={row.checked_in_at ? "btn btn-outline btn-sm" : "btn btn-brass btn-sm"}
+          disabled={busy}
+          onClick={() => (isDesigner ? toggleDesigner(row) : toggleStaff(row))}
+        >
+          {row.checked_in_at ? "Undo" : "Check in"}
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="page" style={{ maxWidth: 820 }}>
@@ -244,45 +289,13 @@ export default function DayOfCheckIn() {
         </div>
       )}
 
-      {visible.map((i) => {
-        if (i.kind === "models") {
-          const m = i.model;
-          return (
-            <div key={i.key} className="card" onClick={() => setOpenModelId(m.applicant_id)}
-              style={{ display: "flex", gap: 12, alignItems: "center", cursor: "pointer", opacity: m.checked_in_at ? 0.7 : 1 }}>
-              <Avatar url={m.photo_url} name={m.full_name} />
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontWeight: 600, fontSize: 16 }}>{m.full_name}</div>
-                <div style={{ fontSize: 12, color: "var(--muted)" }}>
-                  {m.designers.map((d) => `${d.order_in_day}. ${d.name}`).join("  ·  ")}
-                </div>
-                {m.note && <div style={{ fontSize: 12, color: "var(--maybe)", marginTop: 2 }}>📝 {m.note}</div>}
-              </div>
-              <span style={{ fontSize: 11, color: "var(--muted)", textTransform: "uppercase" }}>Model</span>
-              <CheckedPill at={m.checked_in_at} />
-            </div>
-          );
-        }
-        const isDesigner = i.kind === "designers";
-        const row = isDesigner ? i.designer : i.staff;
-        return (
-          <div key={i.key} className="card" style={{ display: "flex", gap: 12, alignItems: "center", opacity: row.checked_in_at ? 0.7 : 1 }}>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontWeight: 600, fontSize: 16 }}>{row.name}</div>
-              <div style={{ fontSize: 12, color: "var(--muted)" }}>
-                {isDesigner ? `Designer #${row.order_in_day} · ${row.model_count} model${row.model_count === 1 ? "" : "s"}` : row.attendee_type}
-              </div>
-            </div>
-            <CheckedPill at={row.checked_in_at} />
-            <button
-              className={row.checked_in_at ? "btn btn-outline btn-sm" : "btn btn-brass btn-sm"}
-              disabled={busy}
-              onClick={() => (isDesigner ? toggleDesigner(row) : toggleStaff(row))}
-            >
-              {row.checked_in_at ? "Undo" : "Check in"}
-            </button>
+      {visible.map((i, idx) => {
+        const heading = idx === 0 || visible[idx - 1].group !== i.group ? (
+          <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: 0.6, textTransform: "uppercase", color: "var(--brass-dark)", margin: "16px 0 6px" }}>
+            {i.group}
           </div>
-        );
+        ) : null;
+        return (<Fragment key={i.key}>{heading}{renderItem(i)}</Fragment>);
       })}
 
       {openModel && (
