@@ -72,6 +72,14 @@ export const api = {
 
   getFinalRoster: (showDayId) => request(`/final-roster?show_day_id=${showDayId}`),
 
+  getNonModelAttendees: (showDayId) => request(`/day-of/attendees?show_day_id=${showDayId}`),
+
+  addNonModelAttendee: (payload) =>
+    request(`/day-of/attendees`, { method: "POST", body: JSON.stringify(payload) }),
+
+  removeNonModelAttendee: (attendeeId, allDays = false) =>
+    request(`/day-of/attendees/${attendeeId}?all_days=${allDays ? "true" : "false"}`, { method: "DELETE" }),
+
   getDirectory: () => request(`/applicants/directory`),
 
   resetApplicant: (applicantId) => request(`/applicants/${applicantId}/reset`, { method: "POST" }),

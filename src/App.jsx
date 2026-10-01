@@ -18,6 +18,8 @@ import ApplicantDetail from "./pages/ApplicantDetail.jsx";
 import PhotoCapture from "./pages/PhotoCapture.jsx";
 import ManualAdd from "./pages/ManualAdd.jsx";
 import DeckView from "./pages/DeckView.jsx";
+import DayOfHub from "./pages/DayOfHub.jsx";
+import NonModelAdditions from "./pages/NonModelAdditions.jsx";
 
 function StaffLayout({ children, guarded }) {
   return (
@@ -44,6 +46,10 @@ export default function App() {
         <Route path="/designers" element={<StaffLayout guarded><Designers /></StaffLayout>} />
         <Route path="/final-roster" element={<StaffLayout guarded><FinalRoster /></StaffLayout>} />
         <Route path="/add" element={<StaffLayout guarded><ManualAdd /></StaffLayout>} />
+
+        {/* Day of Show — hub and most stations are open; Non-Model Additions needs the password */}
+        <Route path="/day-of" element={<StaffLayout><DayOfHub /></StaffLayout>} />
+        <Route path="/day-of/non-model" element={<StaffLayout guarded><NonModelAdditions /></StaffLayout>} />
 
         {/* Audition-day stations — no password, needs to be instant */}
         <Route path="/checkin" element={<StaffLayout><CheckIn /></StaffLayout>} />
