@@ -230,6 +230,56 @@ export default function Designers() {
   );
 }
 
+// Hour / minute / AM-PM dropdowns instead of <input type="time">, which Safari on Mac
+// draws as a tiny empty box. Dropdowns look and behave the same in every browser.
+// value / onChange use "HH:MM" (24-hour); "" means no time.
+function WalkTimePicker({ value, disabled, label, onChange }) {
+  const [h24, m] = value ? value.split(":").map(Number) : [null, null];
+  const [hour, setHour] = useState(h24 === null ? "" : String(h24 % 12 === 0 ? 12 : h24 % 12));
+  const [minute, setMinute] = useState(m === null ? "" : String(m).padStart(2, "0"));
+  const [ampm, setAmpm] = useState(h24 === null ? "" : h24 >= 12 ? "PM" : "AM");
+
+  // follow the saved value (after a save, a refresh, or Clear)
+  useEffect(() => {
+    if (!value) { setHour(""); setMinute(""); setAmpm(""); return; }
+    const [hh, mm] = value.split(":").map(Number);
+    setHour(String(hh % 12 === 0 ? 12 : hh % 12));
+    setMinute(String(mm).padStart(2, "0"));
+    setAmpm(hh >= 12 ? "PM" : "AM");
+  }, [value]);
+
+  function commit(nh, nm, na) {
+    setHour(nh); setMinute(nm); setAmpm(na);
+    if (nh === "" || nm === "" || na === "") return; // wait until all three are chosen
+    let hh = Number(nh) % 12;
+    if (na === "PM") hh += 12;
+    onChange(`${String(hh).padStart(2, "0")}:${nm}`);
+  }
+
+  const minutes = Array.from({ length: 12 }, (_, i) => String(i * 5).padStart(2, "0"));
+  if (minute && !minutes.includes(minute)) minutes.push(minute), minutes.sort();
+  const sel = { fontSize: 14, padding: "6px 8px", borderRadius: 6, border: "1.5px solid var(--line-strong)", background: "var(--paper)" };
+
+  return (
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }} role="group" aria-label={label}>
+      <select style={sel} disabled={disabled} value={hour} aria-label="Hour" onChange={(e) => commit(e.target.value, minute || "00", ampm || "AM")}>
+        <option value="">Hr</option>
+        {Array.from({ length: 12 }, (_, i) => <option key={i + 1} value={String(i + 1)}>{i + 1}</option>)}
+      </select>
+      <b>:</b>
+      <select style={sel} disabled={disabled} value={minute} aria-label="Minute" onChange={(e) => commit(hour || "9", e.target.value, ampm || "AM")}>
+        <option value="">Min</option>
+        {minutes.map((x) => <option key={x} value={x}>{x}</option>)}
+      </select>
+      <select style={sel} disabled={disabled} value={ampm} aria-label="AM or PM" onChange={(e) => commit(hour || "9", minute || "00", e.target.value)}>
+        <option value="">--</option>
+        <option value="AM">AM</option>
+        <option value="PM">PM</option>
+      </select>
+    </span>
+  );
+}
+
 function DesignerRow({
   designer, index, total, showDays, currentDayId, pool,
   expanded, onToggle, onMoveDesigner, onRemove, onMoveDay, onToggleRosterOnly, onUpdateNotes, onUpdateWalkthrough,
@@ -282,7 +332,7 @@ function DesignerRow({
 
   return (
     <div className="card" style={{ marginBottom: 8 }}>
-      <div className="card-row">
+      <div className="card-row" style={{ flexWrap: "wrap", rowGap: 8 }}>
         <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
           <button
             onClick={() => onMoveDesigner(index, -1)}
@@ -341,34 +391,10 @@ function DesignerRow({
           <span>Final<br />Roster</span>
         </label>
 
-        <div className="card-main">
+        <div className="card-main" style={{ flex: "1 1 180px", minWidth: 150 }}>
           <div className="card-name">{designer.name}</div>
           <div className="card-meta">
             {designer.models.length} model{designer.models.length === 1 ? "" : "s"} assigned
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4, flexWrap: "wrap" }}>
-            <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.3, color: "var(--muted)" }}>
-              Walk-through
-            </span>
-            <input
-              type="time"
-              value={designer.walkthrough_time || ""}
-              disabled={walkSaving}
-              onChange={(e) => saveWalk(e.target.value)}
-              aria-label={`Walk-through time for ${designer.name}`}
-              style={{ fontSize: 13, padding: "2px 6px", border: "1px solid var(--line-strong)", borderRadius: 6, background: "var(--paper)" }}
-            />
-            {designer.walkthrough_time ? (
-              <button
-                className="btn btn-outline btn-sm"
-                style={{ padding: "0 8px", lineHeight: "20px" }}
-                disabled={walkSaving}
-                onClick={() => saveWalk("")}
-                aria-label="Clear walk-through time"
-              >✕</button>
-            ) : (
-              <span style={{ fontSize: 12, color: "var(--muted)", fontWeight: 600 }}>TBD</span>
-            )}
           </div>
         </div>
 
@@ -402,6 +428,28 @@ function DesignerRow({
         >
           Remove
         </button>
+      </div>
+
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8, paddingTop: 8, borderTop: "1px solid var(--line)", flexWrap: "wrap" }}>
+        <span style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.3, color: "var(--muted)" }}>
+          Walk-through
+        </span>
+        <WalkTimePicker
+          value={designer.walkthrough_time || ""}
+          disabled={walkSaving}
+          label={`Walk-through time for ${designer.name}`}
+          onChange={saveWalk}
+        />
+        {designer.walkthrough_time ? (
+          <button
+            className="btn btn-outline btn-sm"
+            disabled={walkSaving}
+            onClick={() => saveWalk("")}
+            aria-label="Clear walk-through time"
+          >Clear</button>
+        ) : (
+          <span style={{ fontSize: 12, color: "var(--muted)", fontWeight: 600 }}>TBD</span>
+        )}
       </div>
 
       {notesOpen && (
