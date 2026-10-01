@@ -5,7 +5,7 @@
 export const DAY_OF_PAGES = [
   { path: "/day-of/check-in", label: "Check-In", built: true, accent: "var(--brass)" },
   { path: "/day-of/non-model", label: "Non-Model Check-In Additions", built: true, accent: "var(--navy)" },
-  { path: "/day-of/headshots", label: "Print Headshots", built: false, accent: "var(--yes)" },
+  { path: "/day-of/headshots", label: "Print Headshots", built: true, accent: "var(--yes)" },
   { path: "/day-of/hair", label: "Hair Team", built: true, accent: "var(--maybe)" },
   { path: "/day-of/makeup", label: "Make Up Team", built: true, accent: "var(--brass)" },
 ];

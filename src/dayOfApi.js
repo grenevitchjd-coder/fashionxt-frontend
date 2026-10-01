@@ -48,6 +48,9 @@ export const dayOfApi = {
 
   resetTeamOrder: (team, designerId) =>
     request(`/day-of/teams/${team}/order?designer_id=${designerId}`, { method: "DELETE" }),
+
+  // ---- Print Headshots ----
+  getHeadshotModels: () => request(`/day-of/headshots/models`),
 };
 
 // Download links for the PDFs (plain links work on every device, including the Quest).
@@ -56,4 +59,6 @@ export const dayOfPrintUrls = {
     `${API_BASE}/day-of/print/check-in-sheet?show_day_id=${showDayId}&only_missing=${onlyMissing ? 1 : 0}`,
   modelCards: (showDayId) => `${API_BASE}/day-of/print/model-cards?show_day_id=${showDayId}`,
   teamSheet: (team, showDayId) => `${API_BASE}/day-of/print/team-sheet?team=${team}&show_day_id=${showDayId}`,
+  // list = [{ id, copies }, ...] in print order
+  headshots: (list) => `${API_BASE}/day-of/print/headshots?items=${list.map((p) => `${p.id}:${p.copies}`).join(",")}`,
 };
