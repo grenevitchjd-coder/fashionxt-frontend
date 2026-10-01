@@ -1,4 +1,4 @@
-// API calls for the Day of Show check-in page and its printouts.
+// API calls for the Day of Show pages and their printouts.
 export const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:8000";
 
 async function request(path, options = {}) {
@@ -14,6 +14,7 @@ async function request(path, options = {}) {
 }
 
 const post = (path, body) => request(path, { method: "POST", body: JSON.stringify(body) });
+const put = (path, body) => request(path, { method: "PUT", body: JSON.stringify(body) });
 
 export const dayOfApi = {
   getCheckinList: (showDayId) => request(`/day-of/checkin-list?show_day_id=${showDayId}`),
@@ -32,6 +33,21 @@ export const dayOfApi = {
 
   setAttendeeCheckIn: (attendeeId, checkedIn) =>
     post(`/day-of/attendees/${attendeeId}/check-in`, { checked_in: checkedIn }),
+
+  // ---- Hair / Make Up teams (team = "hair" | "makeup") ----
+  getTeamBoard: (team, showDayId) => request(`/day-of/teams/${team}?show_day_id=${showDayId}`),
+
+  setLookDone: (team, applicantId, designerId, done) =>
+    post(`/day-of/teams/${team}/look-done`, { applicant_id: applicantId, designer_id: designerId, done }),
+
+  setAllLooksDone: (team, applicantId, showDayId, done) =>
+    post(`/day-of/teams/${team}/all-done`, { applicant_id: applicantId, show_day_id: showDayId, done }),
+
+  setTeamOrder: (team, designerId, applicantIds) =>
+    put(`/day-of/teams/${team}/order`, { designer_id: designerId, applicant_ids: applicantIds }),
+
+  resetTeamOrder: (team, designerId) =>
+    request(`/day-of/teams/${team}/order?designer_id=${designerId}`, { method: "DELETE" }),
 };
 
 // Download links for the PDFs (plain links work on every device, including the Quest).
@@ -39,4 +55,5 @@ export const dayOfPrintUrls = {
   checkInSheet: (showDayId, onlyMissing) =>
     `${API_BASE}/day-of/print/check-in-sheet?show_day_id=${showDayId}&only_missing=${onlyMissing ? 1 : 0}`,
   modelCards: (showDayId) => `${API_BASE}/day-of/print/model-cards?show_day_id=${showDayId}`,
+  teamSheet: (team, showDayId) => `${API_BASE}/day-of/print/team-sheet?team=${team}&show_day_id=${showDayId}`,
 };
