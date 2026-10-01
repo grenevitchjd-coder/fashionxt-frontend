@@ -5,8 +5,7 @@ const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:8000";
 // Print-formatted view of ONE show day's designers + model lineups.
 //   variant="staff"    -> includes each designer's internal notes
 //   variant="designer" -> same page, notes left out
-// "Download PDF" fetches a real PDF from the backend (works on any device).
-// "Print this page" uses the browser's own print dialog, where one exists.
+// Use the browser's print dialog: pick a printer, or choose "Save as PDF".
 
 function formatDayDate(iso) {
   if (!iso) return "";
@@ -16,9 +15,31 @@ function formatDayDate(iso) {
   });
 }
 
+// Models who walk for two designers that run one right after the other (designer 2 then 3, ...).
+// Returns { "designerId:applicantId": { prev, next } } for flagged rows; each flagged model is
+// flagged under BOTH designers.
+function backToBackMap(designers) {
+  const ordered = [...designers].sort((a, b) => a.order_in_day - b.order_in_day || a.id - b.id);
+  const flags = {};
+  for (let i = 0; i < ordered.length - 1; i += 1) {
+    const here = ordered[i];
+    const next = ordered[i + 1];
+    const nextIds = new Set(next.models.map((m) => m.applicant_id));
+    here.models.forEach((m) => {
+      if (!nextIds.has(m.applicant_id)) return;
+      const a = (flags[`${here.id}:${m.applicant_id}`] ||= { prev: null, next: null });
+      a.next = next;
+      const b = (flags[`${next.id}:${m.applicant_id}`] ||= { prev: null, next: null });
+      b.prev = here;
+    });
+  }
+  return flags;
+}
+
 export default function DesignerPrintSheet({ day, designers, variant, onClose }) {
   const showNotes = variant === "staff";
   const copyLabel = showNotes ? "Staff copy" : "Designer copy";
+  const b2b = backToBackMap(designers);
 
   // The browser uses the page title as the default PDF file name.
   useEffect(() => {
@@ -34,7 +55,7 @@ export default function DesignerPrintSheet({ day, designers, variant, onClose })
         .print-toolbar {
           display: flex; gap: 8px; align-items: center; padding: 12px 20px;
           border-bottom: 1px solid var(--line-strong); background: var(--paper);
-          position: sticky; top: 0; z-index: 5; flex-wrap: wrap;
+          position: sticky; top: 0; z-index: 5;
         }
         .print-sheet { max-width: 800px; margin: 0 auto; padding: 24px 20px 60px; color: #000; }
         .print-sheet h1 { font-size: 24px; margin: 0 0 2px; }
@@ -50,6 +71,8 @@ export default function DesignerPrintSheet({ day, designers, variant, onClose })
         .print-model:last-child { border-bottom: none; }
         .print-model-num { width: 22px; text-align: right; font-weight: 700; flex-shrink: 0; }
         .print-model-cat { color: #444; font-size: 12px; align-self: center; }
+        .print-model.b2b { background: #fff0d1; border-left: 4px solid #d98a00; padding-left: 8px; margin-left: -12px; padding-right: 8px; margin-right: -8px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        .print-b2b-warn { font-size: 11px; font-weight: 700; color: #9a5b00; margin-top: 1px; }
         .print-empty { font-size: 13px; color: #555; font-style: italic; margin: 0; }
         .print-footer { font-size: 11px; color: #666; margin-top: 18px; }
 
@@ -107,13 +130,27 @@ export default function DesignerPrintSheet({ day, designers, variant, onClose })
             {d.models.length === 0 ? (
               <p className="print-empty">No models assigned yet.</p>
             ) : (
-              d.models.map((m, idx) => (
-                <div key={m.applicant_id} className="print-model">
-                  <span className="print-model-num">{idx + 1}</span>
-                  <span>{m.full_name}</span>
-                  <span className="print-model-cat">({m.category.replace("_", "-")})</span>
-                </div>
-              ))
+              d.models.map((m, idx) => {
+                const flag = b2b[`${d.id}:${m.applicant_id}`];
+                return (
+                  <div key={m.applicant_id} className={`print-model${flag ? " b2b" : ""}`}>
+                    <span className="print-model-num">{idx + 1}</span>
+                    <div>
+                      <span>{m.full_name}</span>{" "}
+                      <span className="print-model-cat">({m.category.replace("_", "-")})</span>
+                      {flag && (
+                        <div className="print-b2b-warn">
+                          !! BACK TO BACK —{" "}
+                          {[
+                            flag.prev && `just came from ${flag.prev.order_in_day}. ${flag.prev.name}`,
+                            flag.next && `goes straight to ${flag.next.order_in_day}. ${flag.next.name}`,
+                          ].filter(Boolean).join("  |  ")}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })
             )}
           </div>
         ))}
