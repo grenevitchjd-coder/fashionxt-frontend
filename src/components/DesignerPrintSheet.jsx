@@ -1,9 +1,12 @@
 import { useEffect } from "react";
 
+const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:8000";
+
 // Print-formatted view of ONE show day's designers + model lineups.
 //   variant="staff"    -> includes each designer's internal notes
 //   variant="designer" -> same page, notes left out
-// Use the browser's print dialog: pick a printer, or choose "Save as PDF".
+// "Download PDF" fetches a real PDF from the backend (works on any device).
+// "Print this page" uses the browser's own print dialog, where one exists.
 
 function formatDayDate(iso) {
   if (!iso) return "";
@@ -31,7 +34,7 @@ export default function DesignerPrintSheet({ day, designers, variant, onClose })
         .print-toolbar {
           display: flex; gap: 8px; align-items: center; padding: 12px 20px;
           border-bottom: 1px solid var(--line-strong); background: var(--paper);
-          position: sticky; top: 0; z-index: 5;
+          position: sticky; top: 0; z-index: 5; flex-wrap: wrap;
         }
         .print-sheet { max-width: 800px; margin: 0 auto; padding: 24px 20px 60px; color: #000; }
         .print-sheet h1 { font-size: 24px; margin: 0 0 2px; }
@@ -62,9 +65,17 @@ export default function DesignerPrintSheet({ day, designers, variant, onClose })
 
       <div className="print-toolbar no-print">
         <button className="btn btn-outline btn-sm" onClick={onClose}>← Back to Designers</button>
-        <button className="btn btn-brass btn-sm" onClick={() => window.print()}>Print / Save as PDF</button>
+        <a
+          className="btn btn-brass btn-sm"
+          href={`${API_BASE}/designers/print-pdf?show_day_id=${day?.id}&notes=${showNotes ? 1 : 0}`}
+          download
+          style={{ textDecoration: "none" }}
+        >
+          Download PDF
+        </a>
+        <button className="btn btn-outline btn-sm" onClick={() => window.print()}>Print this page</button>
         <span style={{ fontSize: 12, color: "var(--muted)" }}>
-          {copyLabel}{showNotes ? " (includes notes)" : " (no notes)"} — in the print window, choose "Save as PDF" to download.
+          {copyLabel}{showNotes ? " (includes notes)" : " (no notes)"} — "Download PDF" works on any device; "Print this page" needs a browser print dialog.
         </span>
       </div>
 
