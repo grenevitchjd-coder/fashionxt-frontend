@@ -11,7 +11,8 @@ import { pickDefaultDay } from "../dayOf.js";
 const REFRESH_MS = 15000;
 const FILTERS = [
   { key: "all", label: "All" },
-  { key: "todo", label: "Not done" },
+  { key: "todo", label: "Not started" },
+  { key: "in_progress", label: "In progress" },
   { key: "done", label: "Done" },
 ];
 
@@ -99,25 +100,25 @@ function Chip({ active, onClick, children }) {
   );
 }
 
-function DoneBox({ checked, disabled, label, onClick }) {
+// A big tap target: "In progress" (amber) or "Done" (green). Tap again to undo.
+function StatusButton({ active, tone, label, disabled, onClick }) {
+  const colors = tone === "done"
+    ? { on: "var(--yes)", text: "#fff" }
+    : { on: "#e0a100", text: "#fff" };
   return (
     <button
       onClick={onClick}
       disabled={disabled}
-      aria-pressed={checked}
+      aria-pressed={active}
       style={{
-        display: "flex", flexDirection: "column", alignItems: "center", gap: 3, background: "none", border: "none",
-        padding: 4, cursor: disabled ? "not-allowed" : "pointer", opacity: disabled ? 0.35 : 1, minWidth: 64,
+        minWidth: 84, padding: "10px 8px", borderRadius: 10, fontSize: 13, fontWeight: 700, lineHeight: 1.1,
+        border: `2.5px solid ${active ? colors.on : "var(--ink)"}`,
+        background: active ? colors.on : "var(--paper)",
+        color: active ? colors.text : "var(--ink)",
+        cursor: disabled ? "not-allowed" : "pointer", opacity: disabled ? 0.35 : 1,
       }}
     >
-      <span style={{
-        width: 36, height: 36, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center",
-        border: `2.5px solid ${checked ? "var(--yes)" : "var(--ink)"}`, background: checked ? "var(--yes)" : "var(--paper)",
-        color: "#fff", fontSize: 22, fontWeight: 700,
-      }}>
-        {checked ? "✓" : ""}
-      </span>
-      <span style={{ fontSize: 10, fontWeight: 700, color: "var(--muted)", textTransform: "uppercase", letterSpacing: 0.4 }}>{label}</span>
+      {active && tone === "done" ? "✓ " : ""}{label}
     </button>
   );
 }
@@ -188,7 +189,8 @@ export default function TeamPage({ team, title, path }) {
     }
   }
 
-  const toggleLook = (m) => run(() => dayOfApi.setLookDone(team, m.applicant_id, current.id, !m.done));
+  const setStatus = (m, status) =>
+    run(() => dayOfApi.setLookStatus(team, m.applicant_id, current.id, m.status === status ? "todo" : status));
   const toggleAll = (m) => run(() => dayOfApi.setAllLooksDone(team, m.applicant_id, dayId, !m.all_done));
   const resetOrder = () => {
     if (!confirm(`Put ${current.name}'s models back in the show's order for the ${title}?`)) return;
@@ -203,7 +205,7 @@ export default function TeamPage({ team, title, path }) {
 
   const q = search.trim().toLowerCase();
   const visible = ordered
-    .filter((m) => filter === "all" || (filter === "done" ? m.done : !m.done))
+    .filter((m) => filter === "all" || m.status === filter)
     .filter((m) => !q || m.full_name.toLowerCase().includes(q));
 
   function startDrag(e, id) {
@@ -267,7 +269,8 @@ export default function TeamPage({ team, title, path }) {
     await run(() => dayOfApi.setTeamOrder(team, current.id, ids));
   }
 
-  const doneCount = current ? current.models.filter((m) => m.done).length : 0;
+  const doneCount = current ? current.models.filter((m) => m.status === "done").length : 0;
+  const progressCount = current ? current.models.filter((m) => m.status === "in_progress").length : 0;
 
   return (
     <div className="page" style={{ maxWidth: 820 }}>
@@ -297,10 +300,12 @@ export default function TeamPage({ team, title, path }) {
       {designers.length > 0 && (
         <div style={{ display: "flex", gap: 6, marginBottom: 14, flexWrap: "wrap" }}>
           {designers.map((d) => {
-            const done = d.models.filter((m) => m.done).length;
+            const done = d.models.filter((m) => m.status === "done").length;
+            const inProgress = d.models.filter((m) => m.status === "in_progress").length;
             return (
               <Chip key={d.id} active={current?.id === d.id} onClick={() => { setDesignerId(d.id); setLocalOrder(null); }}>
-                {d.order_in_day}. {d.name} <span style={{ opacity: 0.7 }}>· {done}/{d.models.length}</span>
+                {d.order_in_day}. {d.name}{" "}
+                <span style={{ opacity: 0.7 }}>· {done}/{d.models.length}{inProgress > 0 ? ` · ${inProgress} in progress` : ""}</span>
               </Chip>
             );
           })}
@@ -316,7 +321,7 @@ export default function TeamPage({ team, title, path }) {
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 20, fontWeight: 700 }}>{current.name}</div>
               <div style={{ fontSize: 12, color: "var(--muted)" }}>
-                {current.models.length} model{current.models.length === 1 ? "" : "s"} · {doneCount} done
+                {current.models.length} model{current.models.length === 1 ? "" : "s"} · {progressCount} in progress · {doneCount} done
                 {current.custom_order && " · your team's custom order"}
               </div>
             </div>
@@ -355,9 +360,11 @@ export default function TeamPage({ team, title, path }) {
                 ref={(el) => { rowRefs.current[m.applicant_id] = el; }}
                 className="card"
                 style={{
-                  display: "flex", gap: 10, alignItems: "center", opacity: m.done && !dragging ? 0.5 : 1,
+                  display: "flex", gap: 10, alignItems: "center", opacity: m.status === "done" && !dragging ? 0.5 : 1,
+                  borderLeft: m.status === "in_progress" && !dragging ? "5px solid #e0a100" : undefined,
                   boxShadow: dragging ? "0 6px 18px rgba(0,0,0,0.25)" : undefined,
-                  borderColor: dragging ? "var(--brass)" : undefined, background: dragging ? "#fffaf0" : undefined,
+                  borderColor: dragging ? "var(--brass)" : undefined,
+                  background: dragging ? "#fffaf0" : (m.status === "in_progress" ? "#fff7e0" : undefined),
                   position: "relative", zIndex: dragging ? 5 : 1,
                 }}
               >
@@ -388,20 +395,39 @@ export default function TeamPage({ team, title, path }) {
                   )}
                   {m.note && <div style={{ fontSize: 12, color: "var(--maybe)", marginTop: 2 }}>📝 {m.note}</div>}
                 </div>
-                <div style={{ display: "flex", gap: 2 }}>
-                  <DoneBox
-                    checked={m.done}
-                    disabled={busy || (!checkedIn && !m.done)}
-                    label={multi ? "This look" : "Done"}
-                    onClick={() => toggleLook(m)}
-                  />
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "stretch", gap: 6 }}>
                   {multi && (
-                    <DoneBox
-                      checked={m.all_done}
-                      disabled={busy || (!checkedIn && !m.all_done)}
-                      label="All looks"
-                      onClick={() => toggleAll(m)}
+                    <div style={{ fontSize: 10, fontWeight: 700, color: "var(--muted)", textTransform: "uppercase", letterSpacing: 0.4, textAlign: "center" }}>
+                      This look
+                    </div>
+                  )}
+                  <div style={{ display: "flex", gap: 6 }}>
+                    <StatusButton
+                      tone="progress" label="In progress" active={m.status === "in_progress"}
+                      disabled={busy || (!checkedIn && m.status !== "in_progress")}
+                      onClick={() => setStatus(m, "in_progress")}
                     />
+                    <StatusButton
+                      tone="done" label="Done" active={m.status === "done"}
+                      disabled={busy || (!checkedIn && m.status !== "done")}
+                      onClick={() => setStatus(m, "done")}
+                    />
+                  </div>
+                  {multi && (
+                    <button
+                      onClick={() => toggleAll(m)}
+                      disabled={busy || (!checkedIn && !m.all_done)}
+                      aria-pressed={m.all_done}
+                      style={{
+                        padding: "7px 8px", borderRadius: 8, fontSize: 12, fontWeight: 700,
+                        border: `2px solid ${m.all_done ? "var(--yes)" : "var(--line-strong)"}`,
+                        background: m.all_done ? "var(--yes)" : "var(--paper)", color: m.all_done ? "#fff" : "var(--ink)",
+                        cursor: busy || (!checkedIn && !m.all_done) ? "not-allowed" : "pointer",
+                        opacity: busy || (!checkedIn && !m.all_done) ? 0.35 : 1,
+                      }}
+                    >
+                      {m.all_done ? "✓ " : ""}All looks done
+                    </button>
                   )}
                 </div>
               </div>

@@ -1,4 +1,4 @@
-// API calls for the Day of Show pages and their printouts.
+// API calls for the Day of Show check-in page and its printouts.
 export const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:8000";
 
 async function request(path, options = {}) {
@@ -37,8 +37,9 @@ export const dayOfApi = {
   // ---- Hair / Make Up teams (team = "hair" | "makeup") ----
   getTeamBoard: (team, showDayId) => request(`/day-of/teams/${team}?show_day_id=${showDayId}`),
 
-  setLookDone: (team, applicantId, designerId, done) =>
-    post(`/day-of/teams/${team}/look-done`, { applicant_id: applicantId, designer_id: designerId, done }),
+  // status: "todo" | "in_progress" | "done"
+  setLookStatus: (team, applicantId, designerId, status) =>
+    post(`/day-of/teams/${team}/look-status`, { applicant_id: applicantId, designer_id: designerId, status }),
 
   setAllLooksDone: (team, applicantId, showDayId, done) =>
     post(`/day-of/teams/${team}/all-done`, { applicant_id: applicantId, show_day_id: showDayId, done }),
