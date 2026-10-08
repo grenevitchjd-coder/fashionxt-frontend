@@ -90,8 +90,76 @@ function StatePill({ label, state }) {
   );
 }
 
+// A model's name, tappable: opens the contact card.
+function NameLink({ m, onOpen, style }) {
+  return (
+    <button
+      onClick={() => onOpen(m)}
+      title="Show phone and email"
+      style={{ all: "unset", cursor: "pointer", fontWeight: 600, textDecoration: "underline dotted", textUnderlineOffset: 3, ...style }}
+    >
+      {m.full_name}
+    </button>
+  );
+}
+
+// Pop-up card with the model's name, phone and email. Tap outside or press Esc to close.
+function ContactCard({ model, onClose }) {
+  const [copied, setCopied] = useState("");
+
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  async function copy(kind, text) {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(kind);
+      setTimeout(() => setCopied(""), 1500);
+    } catch (e) { /* clipboard blocked: the link still works */ }
+  }
+
+  const row = (kind, label, value, href) => (
+    <div style={{ borderTop: "1px solid var(--line)", padding: "12px 0" }}>
+      <div style={{ fontSize: 11, fontWeight: 700, color: "var(--muted)", textTransform: "uppercase", letterSpacing: 0.3, marginBottom: 4 }}>{label}</div>
+      {value ? (
+        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+          <a href={href} style={{ fontSize: 19, fontWeight: 600, color: "var(--navy)", wordBreak: "break-all", flex: 1, minWidth: 0 }}>{value}</a>
+          <button className="btn btn-outline btn-sm" onClick={() => copy(kind, value)}>{copied === kind ? "Copied!" : "Copy"}</button>
+        </div>
+      ) : (
+        <div style={{ color: "var(--muted)", fontSize: 15 }}>None on file</div>
+      )}
+    </div>
+  );
+
+  return (
+    <div
+      onClick={onClose}
+      style={{ position: "fixed", inset: 0, background: "rgba(20,21,26,0.55)", zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}
+      role="dialog"
+      aria-modal="true"
+      aria-label={`Contact details for ${model.full_name}`}
+    >
+      <div onClick={(e) => e.stopPropagation()} className="card" style={{ width: "100%", maxWidth: 380, margin: 0, padding: 20 }}>
+        <div style={{ display: "flex", gap: 14, alignItems: "center", marginBottom: 12 }}>
+          <Avatar url={model.photo_url} name={model.full_name} size={72} />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 22, fontWeight: 700, lineHeight: 1.15 }}>{model.full_name}</div>
+          </div>
+        </div>
+        {row("phone", "Phone", model.phone, `tel:${(model.phone || "").replace(/[^\d+]/g, "")}`)}
+        {row("email", "Email", model.email, `mailto:${model.email}`)}
+        <button className="btn" onClick={onClose} style={{ width: "100%", marginTop: 8, background: "var(--ink)", color: "#fff" }}>Close</button>
+      </div>
+    </div>
+  );
+}
+
 // ---------------------------------------------------------------- Rehearsal
-function RehearsalView({ designers, busy, onToggle }) {
+function RehearsalView({ designers, busy, onToggle, onOpenContact }) {
   const [designerId, setDesignerId] = useState(null);
   const [filter, setFilter] = useState("all");
   const [search, setSearch] = useState("");
@@ -139,7 +207,7 @@ function RehearsalView({ designers, busy, onToggle }) {
         <div key={m.applicant_id} className="card" style={{ display: "flex", gap: 12, alignItems: "center", background: m.rehearsal ? "#f1faf3" : undefined }}>
           <Avatar url={m.photo_url} name={m.full_name} size={52} />
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontWeight: 600, fontSize: 17 }}>{m.full_name}</div>
+            <div style={{ fontSize: 17 }}><NameLink m={m} onOpen={onOpenContact} /></div>
             <div style={{ marginTop: 2 }}>
               {m.checked_in_at
                 ? <span className="status-pill status-yes">Checked in {timeLabel(m.checked_in_at)}</span>
@@ -167,7 +235,7 @@ function RehearsalView({ designers, busy, onToggle }) {
 }
 
 // -------------------------------------------------------------- Live status
-function LiveView({ designers }) {
+function LiveView({ designers, onOpenContact }) {
   if (designers.length === 0) return <div className="empty-state"><h3>No designers on this day yet</h3></div>;
 
   // day-wide counts across every designer's models
@@ -204,7 +272,7 @@ function LiveView({ designers }) {
                   <div key={m.applicant_id} className="card" style={{ display: "flex", gap: 10, alignItems: "center", padding: "8px 12px", margin: "0 0 4px", borderLeft: `5px solid ${s.color}` }}>
                     <Avatar url={m.photo_url} name={m.full_name} size={38} />
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontWeight: 600, fontSize: 15 }}>{m.full_name}</div>
+                      <div style={{ fontSize: 15 }}><NameLink m={m} onOpen={onOpenContact} /></div>
                       {m.note && <div style={{ fontSize: 11, color: "var(--maybe)" }}>📝 {m.note}</div>}
                     </div>
                     <div style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "flex-end" }}>
@@ -292,6 +360,7 @@ export default function ModelTracking() {
   const [tab, setTab] = useState("rehearsal");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [contact, setContact] = useState(null); // the model whose contact card is open
   const dayRef = useRef(null);
   const pausedRef = useRef(false);
 
@@ -370,9 +439,11 @@ export default function ModelTracking() {
       {error && <p style={{ color: "var(--no)", fontSize: 13 }}>{error}</p>}
       {!board && !error && <p style={{ color: "var(--muted)" }}>Loading…</p>}
 
-      {board && tab === "rehearsal" && <RehearsalView designers={designers} busy={busy} onToggle={toggleRehearsal} />}
-      {board && tab === "live" && <LiveView designers={designers} />}
+      {board && tab === "rehearsal" && <RehearsalView designers={designers} busy={busy} onToggle={toggleRehearsal} onOpenContact={setContact} />}
+      {board && tab === "live" && <LiveView designers={designers} onOpenContact={setContact} />}
       {board && tab === "progress" && <ProgressView designers={designers} />}
+
+      {contact && <ContactCard model={contact} onClose={() => setContact(null)} />}
     </div>
   );
 }
